@@ -1,0 +1,20 @@
+html, body {
+  /* Prevents scrollbars */
+  overflow: hidden;
+  margin: 0;
+}
+
+.account {
+  height: 30px;
+  margin-top: 15px;
+  margin-left: 15px;
+}
+
+.allGameViews {
+  margin-top: -45px;
+  text-align: center;
+}
+
+#canvasMain {
+    border: solid black 1px;
+}

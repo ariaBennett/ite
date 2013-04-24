@@ -1,0 +1,16 @@
+<head>
+  <title>ite</title>
+</head>
+
+<body>
+  <div class="account">
+    {{loginButtons}}
+  </div>
+  <div class="allGameViews">
+    {{> gameViewCanvas}}
+  </div>
+</body>
+
+<template name="gameViewCanvas">
+    <canvas id="canvasMain" width="1024" height="896"></canvas>
+</template>
