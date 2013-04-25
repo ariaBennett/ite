@@ -2,44 +2,48 @@
 Players = new Meteor.Collection("Players");
 Zones = new Meteor.Collection("Zones");
 
-// Classes
-
-// Shared Client & Server Meteor Methods
-
-// "Globals", hopefully temporary ones
+// ITE Copyright 2013 by Aria Bennett
+// All rights reserved.
+//
+// This is my main source file for this 
+// project.  Currently you can find nearly
+// all relevant code to the project in this
+// single .js file.  This file was designed 
+// to be viewed with a fold method based on 
+// spacing.  
+//
+// This is a private project,
+// unless you have recieved express consent
+// from me personally you should not be 
+// viewing anything in this project.
+//
+// Thank you
+// Aria Bennett
 
 // Client
 if (Meteor.isClient) {
 
-  // Client UI Config
   Accounts.ui.config({
+    // Client UI Config
     passwordSignupFields: 'USERNAME_ONLY'
   });
 
-  // Client Meteor.methods stubs
   Meteor.methods({
+    // Client Meteor.methods stubs
     incrementPlayerPosition: function (id, x, y) {
       Players.update(id, {$inc: {"pos.x": x}});
       Players.update(id, {$inc: {"pos.y": y}});
-      },
+    },
   });
-
-  /*Possibly unnecessary code.
-  var playerCurrent = function () {
-    return Players.findOne(playerCurrent_id);
-  };
-  */
-
+  
   function prewarm () {
     Deps.autorun ( function () {
       if (Meteor.user()) {
         if (getPlayer = Players.findOne({"name.first": Meteor.user().username})) {
           playerCurrent_id = getPlayer._id;
           me = getPlayer;
-          playersInZone = Players.find({"zone.name": getPlayer.zone.name, "online": "true"}, {sort: {"pos.y": 1}}, {sort: {"pos.z": 1}}).fetch();
-          // Debug Code
-          debugBeforeX = me.pos.x;
-
+          playersInZone = Players.find({"zone.name": getPlayer.zone.name, "online": "true"},
+            {sort: {"pos.y": 1}}, {sort: {"pos.z": 1}}).fetch();
         }
       }
       if (!Meteor.user()) {
@@ -52,21 +56,23 @@ if (Meteor.isClient) {
   function canvasMainImagesDeclare () {
     imageBackground = new Image();
     imageMainPlayer = new Image();
+    imageFaun = new Image();
   }
 
   function canvasMainImagesPreload () {
     imageBackground.src = "assets/test/ChronoTrigger600CathedralBG_Big.png";
     imageMainPlayer.src = "assets/test/magus_sheet_movement_big.png";
+          imageFaun.src = "assets/Michael/CharacterModel-Faun128x256.png";
   }
   
   function canvasMainSetup () {
-    window.requestAnimFrame = (function(){
-      return window.requestAnimationFrame       ||
-        window.webkitRequestAnimationFrame ||
-        window.mozRequestAnimationFrame    ||
-        function( callback ){
-          window.setTimeout(callback, 1000 / 60);
-        };
+    window.requestAnimFrame = (function () {
+      return window.requestAnimationFrame ||
+      window.webkitRequestAnimationFrame  ||
+      window.mozRequestAnimationFrame     ||
+      function( callback ){
+        window.setTimeout(callback, 1000 / 60);
+      };
     })();
     canvasMain = document.getElementById("canvasMain");
     ctxMain = canvasMain.getContext("2d");
@@ -76,8 +82,8 @@ if (Meteor.isClient) {
     sliceY = 0;
   }
 
-  // Draw updates to the main game canvas
   function drawCanvasMain () {
+    // Draw updates to the main game canvas
     if (canvasMain.getContext && playerCurrent_id) {
 
       function clearCanvas () {
@@ -124,22 +130,22 @@ if (Meteor.isClient) {
               var playerSliceX = 0;
               var playerSliceY = 0;
               if (player.animation.facing === "left") {
-                playerSliceX = 0;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.left.x;
+                playerSliceY = player.sprite.slice.left.y;
               }
               else if (player.animation.facing === "right") {
-                playerSliceX = 256;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.right.x;
+                playerSliceY = player.sprite.slice.right.y;
               }
               else if (player.animation.facing === "up") {
-                playerSliceX = 128;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.up.x;
+                playerSliceY = player.sprite.slice.up.y;
               }
               else if (player.animation.facing === "down") {
-                playerSliceX = 384;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.down.x;
+                playerSliceY = player.sprite.slice.down.y;
               }
-              ctxMain.drawImage(imageMainPlayer, playerSliceX, playerSliceY, 128, 192,
+              ctxMain.drawImage(player.sprite, playerSliceX, playerSliceY, 128, 192,
                 player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
                 // 128 x 192
                 player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
@@ -155,22 +161,22 @@ if (Meteor.isClient) {
               var playerSliceX = 0;
               var playerSliceY = 0;
               if (player.animation.facing === "left") {
-                playerSliceX = 0;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.left.x;
+                playerSliceY = player.sprite.slice.left.y;
               }
               else if (player.animation.facing === "right") {
-                playerSliceX = 256;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.right.x;
+                playerSliceY = player.sprite.slice.right.y;
               }
               else if (player.animation.facing === "up") {
-                playerSliceX = 128;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.up.x;
+                playerSliceY = player.sprite.slice.up.y;
               }
               else if (player.animation.facing === "down") {
-                playerSliceX = 384;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.down.x;
+                playerSliceY = player.sprite.slice.down.y;
               }
-              ctxMain.drawImage(imageMainPlayer, playerSliceX, playerSliceY, 128, 192,
+              ctxMain.drawImage(player.sprite.name, playerSliceX, playerSliceY, 128, 192,
                 player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
                 // 128 x 192
                 player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
@@ -185,22 +191,22 @@ if (Meteor.isClient) {
               var playerSliceX = 0;
               var playerSliceY = 0;
               if (player.animation.facing === "left") {
-                playerSliceX = 0;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.left.x;
+                playerSliceY = player.sprite.slice.left.y;
               }
               else if (player.animation.facing === "right") {
-                playerSliceX = 256;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.right.x;
+                playerSliceY = player.sprite.slice.right.y;
               }
               else if (player.animation.facing === "up") {
-                playerSliceX = 128;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.up.x;
+                playerSliceY = player.sprite.slice.up.y;
               }
               else if (player.animation.facing === "down") {
-                playerSliceX = 384;
-                playerSliceY = 0;
+                playerSliceX = player.sprite.slice.down.x;
+                playerSliceY = player.sprite.slice.down.y;
               }
-              ctxMain.drawImage(imageMainPlayer, playerSliceX, playerSliceY, 128, 192,
+              ctxMain.drawImage(player.sprite.name, playerSliceX, playerSliceY, 128, 192,
                 player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
                 // 128 x 192
                 player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
@@ -232,10 +238,10 @@ if (Meteor.isClient) {
           sliceY = 0;
         }
         // Draw current player 448, 352
-        ctxMain.drawImage(imageMainPlayer, sliceX, sliceY, 128, 192,
+        ctxMain.drawImage(imageFaun, 0, 0, 128, 256,
           Math.min(448, (448 + player.pos.x)), 
           // 128 x 192
-          Math.min(352, (352 + player.pos.y)), 128, 192);
+          Math.min(352, (352 + player.pos.y)), 64, 148);
       }
 
       // All code that actually draws on the canvas should
@@ -255,8 +261,8 @@ if (Meteor.isClient) {
     })();
   }
 
-  // keydown
   function attachControls () {
+    // keydown
     window.addEventListener("keydown", function (event) {
       // Movement
       // Up Arrow
@@ -314,33 +320,31 @@ if (Meteor.isClient) {
   }
 
   function tryMovement () { 
-   window.setInterval(function () {
+    window.setInterval(function () {
       if (playerCurrent_id) {
         moveAmount = 4;
-
-          // Movement
-          // Up Arrow, Negative Y
-          if (Session.equals("keyArrowUp", "down")) {
-              Meteor.call("incrementPlayerPosition", playerCurrent_id, 0, -moveAmount, "up");
-          }
-          // Left Arrow, Negative X
-          if (Session.equals("keyArrowLeft", "down")) {
-              Meteor.call("incrementPlayerPosition", playerCurrent_id, -moveAmount, 0, "left");
-          }
-          // Right Arrow, Positive X
-          if (Session.equals("keyArrowRight", "down")) {
-              Meteor.call("incrementPlayerPosition", playerCurrent_id, moveAmount, 0, "right");
-          }
-          // Down Arrow, Positive Y
-          if (Session.equals("keyArrowDown", "down")) {
-              Meteor.call("incrementPlayerPosition", playerCurrent_id, 0, moveAmount, "down");
-          }
-          
-          // Actions
-          // Space
-          if (Session.get("keySpace") === "down") {
-            console.log("Space Pressed");
-          }
+        // Movement
+        // Up Arrow, Negative Y
+        if (Session.equals("keyArrowUp", "down")) {
+            Meteor.call("incrementPlayerPosition", playerCurrent_id, 0, -moveAmount, "up");
+        }
+        // Left Arrow, Negative X
+        if (Session.equals("keyArrowLeft", "down")) {
+            Meteor.call("incrementPlayerPosition", playerCurrent_id, -moveAmount, 0, "left");
+        }
+        // Right Arrow, Positive X
+        if (Session.equals("keyArrowRight", "down")) {
+            Meteor.call("incrementPlayerPosition", playerCurrent_id, moveAmount, 0, "right");
+        }
+        // Down Arrow, Positive Y
+        if (Session.equals("keyArrowDown", "down")) {
+            Meteor.call("incrementPlayerPosition", playerCurrent_id, 0, moveAmount, "down");
+        }
+        // Actions
+        // Space
+        if (Session.get("keySpace") === "down") {
+          console.log("Space Pressed");
+        }
       }
     }, 12);
   }
@@ -373,49 +377,59 @@ if (Meteor.isClient) {
 // Server
 if (Meteor.isServer) {
 
-  // Server Information Publishes
-  /*
-  Meteor.publish("playersInZone", function (zone) {
-    return Players.find({"zone.name": zone, online: "true"});
-  });
-  */
-
-  // Server Meteor.methods
   Meteor.methods({
+    // Server Meteor.methods
     createPlayer: function (name) {
       Players.insert( {
-
         account: {
           region: "North America",
         },
-
         server: "alpha",
-
         online: "true",
-
         name: {
           prefix: "",
           first: name,
           last: "",
           suffix: ""
         },
-
         zone: {
           type: "static",
           name: "ct_cathedral"
         },
-
         pos: {
           x: 1984,
           y: 352,
           z: 0
         },
-
+        sprite: {
+          name: "imageFaun",
+          size: {
+            x: 128,
+            y: 256
+          },
+          slice: {
+            left: {
+              x: 0,
+              y: 0
+            },
+            right: {
+              x: 256,
+              y: 0
+            },
+            up: {
+              x: 128,
+              y: 0
+            },
+            down: {
+              x: 384,
+              y: 0
+            }
+          }
+        },
         animation: {
           name: "running",
           facing: "down"
         },        
-
         appearance: {
           hair: "",
           face: "",
@@ -423,7 +437,6 @@ if (Meteor.isServer) {
           skin: "",
           body: ""
         },
-
         equipment: {
           // Weapons
           rhand: "",
@@ -441,7 +454,6 @@ if (Meteor.isServer) {
           rring: "",
           lring: ""
         },
-
         items: {
           inventory: {
             consumables: [""],
@@ -456,13 +468,6 @@ if (Meteor.isServer) {
           account: [""],
           story: [""]
         },
-
-
-
-
-        // Statistics
-
-
         entryEnd: "entryEnd"
       });                              
     },
@@ -474,9 +479,8 @@ if (Meteor.isServer) {
     }
   });
 
-  // Server Accounts Config
   Accounts.onCreateUser(function(options, user) {
-    // We still want the default hook's 'profile' behavior.
+    // Server Accounts Config
     if (options.profile)
       user.profile = options.profile;
     if (!Players.findOne({"name.first": user.username})) {
@@ -485,8 +489,8 @@ if (Meteor.isServer) {
     return user;
   });
 
-
   Meteor.startup(function () {
+    // Init Zones
     if (!Zones.findOne({"name": "ct_cathedral"})) {
       Zones.insert( {
         name: "ct_cathedral",
@@ -496,13 +500,5 @@ if (Meteor.isServer) {
         }
       });                              
     }
-    /*
-    var players = Players.find();
-    var handle = players.observe({
-      added: function (id) {
-
-      }
-    });
-    */
   });
 }
