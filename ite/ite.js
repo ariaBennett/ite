@@ -1,23 +1,22 @@
-//Databases
+// Shared Databases
 Players = new Meteor.Collection("Players");
 Zones = new Meteor.Collection("Zones");
 
-//Classes
+// Classes
 
-//Shared Client & Server Meteor Methods
+// Shared Client & Server Meteor Methods
 
+// "Globals", hopefully temporary ones
 
-//"Globals", hopefully temporary ones
-
-//Client
+// Client
 if (Meteor.isClient) {
 
-  //Client UI Config
+  // Client UI Config
   Accounts.ui.config({
     passwordSignupFields: 'USERNAME_ONLY'
   });
 
-  //Client Meteor.methods stubs
+  // Client Meteor.methods stubs
   Meteor.methods({
     incrementPlayerPosition: function (id, x, y) {
       Players.update(id, {$inc: {"pos.x": x}});
@@ -26,7 +25,7 @@ if (Meteor.isClient) {
   });
 
   /*Possibly unnecessary code.
-  var player = function () {
+  var playerCurrent = function () {
     return Players.findOne(playerCurrent_id);
   };
   */
@@ -37,15 +36,15 @@ if (Meteor.isClient) {
         if (getPlayer = Players.findOne({"name.first": Meteor.user().username})) {
           playerCurrent_id = getPlayer._id;
           me = getPlayer;
-          others = Players.find({"zone.name": getPlayer.zone.name, "online": "true"}, {sort: {"pos.y": 1}}, {sort: {"pos.z": 1}}).fetch();
-          //Debug Code
+          playersInZone = Players.find({"zone.name": getPlayer.zone.name, "online": "true"}, {sort: {"pos.y": 1}}, {sort: {"pos.z": 1}}).fetch();
+          // Debug Code
           debugBeforeX = me.pos.x;
 
         }
       }
       if (!Meteor.user()) {
         playerCurrent_id = "";
-        others = "";
+        playersInZone = "";
       }
     });
   }
@@ -77,49 +76,145 @@ if (Meteor.isClient) {
     sliceY = 0;
   }
 
-  //Draw updates to the main game canvas
+  // Draw updates to the main game canvas
   function drawCanvasMain () {
     if (canvasMain.getContext) {
-      //Clear Canvas
-      ctxMain.clearRect (0, 0, 1024, 896);
-      //Draw Floor of Player's Zone
-      if (playerCurrent_id) {
-        ctxMain.drawImage(imageBackground, 
-          Math.min(-me.pos.x, 0), 
-          Math.min(-me.pos.y, 0), 4480, 11840);
-        //Draw Players
-        //Hacky way to display others below player
-        _.each(others, function (other) {
-          if (playerCurrent_id !== other._id && 
-              other.pos.y <= me.pos.y) {
-            //Temporary other player animation
-            var otherSliceX = 0;
-            var otherSliceY = 0;
-            if (other.animation.facing === "left") {
-              otherSliceX = 0;
-              otherSliceY = 0;
-            }
-            else if (other.animation.facing === "right") {
-              otherSliceX = 256;
-              otherSliceY = 0;
-            }
-            else if (other.animation.facing === "up") {
-              otherSliceX = 128;
-              otherSliceY = 0;
-            }
-            else if (other.animation.facing === "down") {
-              otherSliceX = 384;
-              otherSliceY = 0;
-            }
-            ctxMain.drawImage(imageMainPlayer, otherSliceX, otherSliceY, 128, 192,
-              other.pos.x - me.pos.x + Math.min(448, (448 + me.pos.x)), 
-              // 128 x 192
-              other.pos.y - me.pos.y + Math.min(352, (352 + me.pos.y)),
-              128, 192);
-          }
-        });
 
-        //Temporary player facing animation
+      function clearCanvas () {
+        // Clear Canvas
+        ctxMain.clearRect (0, 0, 1024, 896);
+      }
+
+      function drawEnviroment (relationalObject, relation) {
+        // relationalObject should be the player,
+        // relation should be either above, below,
+        // or both.
+        //
+        // NOTE: relational aspects of this function
+        // are not implemented at this time, waiting
+        // until enviroment structure is more apparent.
+
+        // Draw Floor of Player's Zone
+        if (playerCurrent_id) {
+          ctxMain.drawImage(imageBackground, 
+            Math.min(-relationalObject.pos.x, 0), 
+            Math.min(-relationalObject.pos.y, 0), 4480, 11840);
+        }
+      }
+
+      function drawPlayersOther(players, relationalObject, relation) {
+        // Draws player characters who are >not< the main
+        // player.
+        // 
+        // players should be a list of documents sorted by
+        // their Y and Z coordinates.
+        // 
+        // relationalObject is intended to be the main player,
+        // relation should be either "below", "above", or "both",
+        // and will determine which players are drawn.
+        // 
+        // NOTE: Do not use "both" unless the layered position of the
+        // relationalObject is unimportant!  
+        
+        if (relation === "below") {
+          _.each(players, function (player) {
+            if (playerCurrent_id !== player._id && 
+                player.pos.y <= relationalObject.pos.y) {
+              // Temporary player animation
+              var playerSliceX = 0;
+              var playerSliceY = 0;
+              if (player.animation.facing === "left") {
+                playerSliceX = 0;
+                playerSliceY = 0;
+              }
+              else if (player.animation.facing === "right") {
+                playerSliceX = 256;
+                playerSliceY = 0;
+              }
+              else if (player.animation.facing === "up") {
+                playerSliceX = 128;
+                playerSliceY = 0;
+              }
+              else if (player.animation.facing === "down") {
+                playerSliceX = 384;
+                playerSliceY = 0;
+              }
+              ctxMain.drawImage(imageMainPlayer, playerSliceX, playerSliceY, 128, 192,
+                player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
+                // 128 x 192
+                player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
+                128, 192);
+            }
+          });
+        }
+        else if (relation === "above") {
+          _.each(players, function (player) {
+            if (playerCurrent_id !== player._id && 
+                player.pos.y > relationalObject.pos.y) {
+              // Temporary player animation
+              var playerSliceX = 0;
+              var playerSliceY = 0;
+              if (player.animation.facing === "left") {
+                playerSliceX = 0;
+                playerSliceY = 0;
+              }
+              else if (player.animation.facing === "right") {
+                playerSliceX = 256;
+                playerSliceY = 0;
+              }
+              else if (player.animation.facing === "up") {
+                playerSliceX = 128;
+                playerSliceY = 0;
+              }
+              else if (player.animation.facing === "down") {
+                playerSliceX = 384;
+                playerSliceY = 0;
+              }
+              ctxMain.drawImage(imageMainPlayer, playerSliceX, playerSliceY, 128, 192,
+                player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
+                // 128 x 192
+                player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
+                128, 192);
+            }
+          });
+        }
+        else if (relation === "both") {
+          _.each(players, function (player) {
+            if (playerCurrent_id !== player._id) {
+              // Temporary player animation
+              var playerSliceX = 0;
+              var playerSliceY = 0;
+              if (player.animation.facing === "left") {
+                playerSliceX = 0;
+                playerSliceY = 0;
+              }
+              else if (player.animation.facing === "right") {
+                playerSliceX = 256;
+                playerSliceY = 0;
+              }
+              else if (player.animation.facing === "up") {
+                playerSliceX = 128;
+                playerSliceY = 0;
+              }
+              else if (player.animation.facing === "down") {
+                playerSliceX = 384;
+                playerSliceY = 0;
+              }
+              ctxMain.drawImage(imageMainPlayer, playerSliceX, playerSliceY, 128, 192,
+                player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
+                // 128 x 192
+                player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
+                128, 192);
+            }
+          });
+        }
+      }
+
+      function drawPlayer(player) {
+        // Draws a single player, currently designed only
+        // to be used on the current player.
+
+        // Temporary player facing animation
         if (Session.equals("keyArrowLeft", "down")) {
           sliceX = 0;
           sliceY = 0;
@@ -138,41 +233,18 @@ if (Meteor.isClient) {
         }
         // Draw current player 448, 352
         ctxMain.drawImage(imageMainPlayer, sliceX, sliceY, 128, 192,
-          Math.min(448, (448 + me.pos.x)), 
+          Math.min(448, (448 + player.pos.x)), 
           // 128 x 192
-          Math.min(352, (352 + me.pos.y)), 128, 192);
-
-        //Hacky way to display others above player
-        _.each(others, function (other) {
-          if (playerCurrent_id !== other._id &&
-              other.pos.y > me.pos.y) {
-            //Temporary other player animation
-            var otherSliceX = 0;
-            var otherSliceY = 0;
-            if (other.animation.facing === "left") {
-              otherSliceX = 0;
-              otherSliceY = 0;
-            }
-            else if (other.animation.facing === "right") {
-              otherSliceX = 256;
-              otherSliceY = 0;
-            }
-            else if (other.animation.facing === "up") {
-              otherSliceX = 128;
-              otherSliceY = 0;
-            }
-            else if (other.animation.facing === "down") {
-              otherSliceX = 384;
-              otherSliceY = 0;
-            }
-            ctxMain.drawImage(imageMainPlayer, otherSliceX, otherSliceY, 128, 192,
-              other.pos.x - me.pos.x + Math.min(448, (448 + me.pos.x)), 
-              // 128 x 192
-              other.pos.y - me.pos.y + Math.min(352, (352 + me.pos.y)),
-              128, 192);
-          }
-        });
+          Math.min(352, (352 + player.pos.y)), 128, 192);
       }
+
+      // All code that actually draws on the canvas should
+      // go below here.
+      clearCanvas();
+      drawEnviroment(me, "below");
+      drawPlayersOther(playersInZone, me, "below");
+      drawPlayer(me);
+      drawPlayersOther(playersInZone, me, "above");
     }
   }
   
@@ -183,57 +255,57 @@ if (Meteor.isClient) {
     })();
   }
 
-  //keydown
+  // keydown
   function attachControls () {
     window.addEventListener("keydown", function (event) {
-      //Movement
-      //Up Arrow
+      // Movement
+      // Up Arrow
       if (event.keyCode === 38) {
         Session.set("keyArrowUp", "down");
       }
-      //Left Arrow
+      // Left Arrow
       if (event.keyCode === 37) {
         Session.set("keyArrowLeft", "down");
       }
-      //Right Arrow
+      // Right Arrow
       if (event.keyCode === 39) {
         Session.set("keyArrowRight", "down");
       }
-      //Down Arrow
+      // Down Arrow
       if (event.keyCode === 40) {
         Session.set("keyArrowDown", "down");
       }
     
-      //Actions
-      //Space
+      // Actions
+      // Space
       if (event.keyCode === 32) {
         Session.set("keySpace", "down");
       }
 
     });
 
-    //keyup
+    // keyup
     window.addEventListener("keyup", function (event) {
-      //Movement
-      //Up Arrow
+      // Movement
+      // Up Arrow
       if (event.keyCode === 38) {
         Session.set("keyArrowUp", "up");
       }
-      //Left Arrow
+      // Left Arrow
       if (event.keyCode === 37) {
         Session.set("keyArrowLeft", "up");
       }
-      //Right Arrow
+      // Right Arrow
       if (event.keyCode === 39) {
         Session.set("keyArrowRight", "up");
       }
-      //Down Arrow
+      // Down Arrow
       if (event.keyCode === 40) {
         Session.set("keyArrowDown", "up");
       }
     
-      //Actions
-      //Space
+      // Actions
+      // Space
       if (event.keyCode === 32) {
         Session.set("keySpace", "up");
       }
@@ -246,26 +318,26 @@ if (Meteor.isClient) {
       if (playerCurrent_id) {
         moveAmount = 4;
 
-          //Movement
-          //Up Arrow, Negative Y
+          // Movement
+          // Up Arrow, Negative Y
           if (Session.equals("keyArrowUp", "down")) {
               Meteor.call("incrementPlayerPosition", playerCurrent_id, 0, -moveAmount, "up");
           }
-          //Left Arrow, Negative X
+          // Left Arrow, Negative X
           if (Session.equals("keyArrowLeft", "down")) {
               Meteor.call("incrementPlayerPosition", playerCurrent_id, -moveAmount, 0, "left");
           }
-          //Right Arrow, Positive X
+          // Right Arrow, Positive X
           if (Session.equals("keyArrowRight", "down")) {
               Meteor.call("incrementPlayerPosition", playerCurrent_id, moveAmount, 0, "right");
           }
-          //Down Arrow, Positive Y
+          // Down Arrow, Positive Y
           if (Session.equals("keyArrowDown", "down")) {
               Meteor.call("incrementPlayerPosition", playerCurrent_id, 0, moveAmount, "down");
           }
           
-          //Actions
-          //Space
+          // Actions
+          // Space
           if (Session.get("keySpace") === "down") {
             console.log("Space Pressed");
           }
@@ -289,29 +361,26 @@ if (Meteor.isClient) {
     }, 1000);
   }
 
-  //Startup Sequence
+  // Startup Sequence
   Meteor.startup(prewarm);
   Meteor.startup(canvasMainSetup);
   Meteor.startup(canvasMainDrawLoop);
   Meteor.startup(attachControls);
   Meteor.startup(tryMovement);
-  //Meteor.startup(debugReport);
+  // Meteor.startup(debugReport);
 }
 
-
-
-
-//Server
+// Server
 if (Meteor.isServer) {
 
-  //Server Information Publishes
+  // Server Information Publishes
   /*
   Meteor.publish("playersInZone", function (zone) {
     return Players.find({"zone.name": zone, online: "true"});
   });
   */
 
-  //Server Meteor.methods
+  // Server Meteor.methods
   Meteor.methods({
     createPlayer: function (name) {
       Players.insert( {
@@ -356,10 +425,10 @@ if (Meteor.isServer) {
         },
 
         equipment: {
-          //Weapons
+          // Weapons
           rhand: "",
           lhand: "",
-          //Clothes
+          // Clothes
           head: "",
           chest: "",
           shoulders: "",
@@ -367,7 +436,7 @@ if (Meteor.isServer) {
           hands: "",
           legs: "",
           feet: "",
-          //Jewelry
+          // Jewelry
           necklace: "",
           rring: "",
           lring: ""
@@ -391,7 +460,7 @@ if (Meteor.isServer) {
 
 
 
-        //Statistics
+        // Statistics
 
 
         entryEnd: "entryEnd"
@@ -405,7 +474,7 @@ if (Meteor.isServer) {
     }
   });
 
-  //Server Accounts Config
+  // Server Accounts Config
   Accounts.onCreateUser(function(options, user) {
     // We still want the default hook's 'profile' behavior.
     if (options.profile)
