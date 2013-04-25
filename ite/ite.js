@@ -62,7 +62,7 @@ if (Meteor.isClient) {
   function canvasMainImagesPreload () {
     imageBackground.src = "assets/test/ChronoTrigger600CathedralBG_Big.png";
     imageMainPlayer.src = "assets/test/magus_sheet_movement_big.png";
-          imageFaun.src = "assets/Michael/CharacterModel-Faun128x256.png";
+          imageFaun.src = "assets/Michael/CharacterModel-Faun64x128.png";
   }
   
   function canvasMainSetup () {
@@ -145,7 +145,7 @@ if (Meteor.isClient) {
                 playerSliceX = player.sprite.slice.down.x;
                 playerSliceY = player.sprite.slice.down.y;
               }
-              ctxMain.drawImage(player.sprite.name, playerSliceX, playerSliceY, 128, 192,
+              ctxMain.drawImage(window[player.sprite.name], playerSliceX, playerSliceY, 128, 192,
                 player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
                 // 128 x 192
                 player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
@@ -176,7 +176,7 @@ if (Meteor.isClient) {
                 playerSliceX = player.sprite.slice.down.x;
                 playerSliceY = player.sprite.slice.down.y;
               }
-              ctxMain.drawImage(player.sprite.name, playerSliceX, playerSliceY, 128, 192,
+              ctxMain.drawImage(window[player.sprite.name], playerSliceX, playerSliceY, 128, 192,
                 player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
                 // 128 x 192
                 player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
@@ -238,10 +238,13 @@ if (Meteor.isClient) {
           sliceY = 0;
         }
         // Draw current player 448, 352
-        ctxMain.drawImage(player.sprite.name, 0, 0, 128, 256,
+        ctxMain.drawImage(window[player.sprite.name], 
+          sliceX, sliceY, 
+          player.sprite.size.x, player.sprite.size.y,
           Math.min(448, (448 + player.pos.x)), 
           // 128 x 192
-          Math.min(352, (352 + player.pos.y)), 64, 148);
+          Math.min(352, (352 + player.pos.y)), 
+          player.sprite.size.x, player.sprite.size.y);
       }
 
       // All code that actually draws on the canvas should
@@ -402,10 +405,10 @@ if (Meteor.isServer) {
           z: 0
         },
         sprite: {
-          name: imageFaun,
+          name: "imageMainPlayer",
           size: {
             x: 128,
-            y: 256
+            y: 192
           },
           slice: {
             left: {
