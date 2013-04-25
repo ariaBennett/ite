@@ -78,7 +78,7 @@ if (Meteor.isClient) {
 
   // Draw updates to the main game canvas
   function drawCanvasMain () {
-    if (canvasMain.getContext) {
+    if (canvasMain.getContext && playerCurrent_id) {
 
       function clearCanvas () {
         // Clear Canvas
