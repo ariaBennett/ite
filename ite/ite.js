@@ -67,11 +67,11 @@ if (Meteor.isClient) {
   
   function canvasMainSetup () {
     window.requestAnimFrame = (function () {
-      return window.requestAnimationFrame ||
-      window.webkitRequestAnimationFrame  ||
-      window.mozRequestAnimationFrame     ||
-      function( callback ){
-        window.setTimeout(callback, 1000 / 60);
+      return window.requestAnimationFrame   ||
+        window.webkitRequestAnimationFrame  ||
+        window.mozRequestAnimationFrame     ||
+        function( callback ){
+          window.setTimeout(callback, 1000 / 60);
       };
     })();
     canvasMain = document.getElementById("canvasMain");
@@ -145,7 +145,7 @@ if (Meteor.isClient) {
                 playerSliceX = player.sprite.slice.down.x;
                 playerSliceY = player.sprite.slice.down.y;
               }
-              ctxMain.drawImage(player.sprite, playerSliceX, playerSliceY, 128, 192,
+              ctxMain.drawImage(player.sprite.name, playerSliceX, playerSliceY, 128, 192,
                 player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
                 // 128 x 192
                 player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
@@ -238,7 +238,7 @@ if (Meteor.isClient) {
           sliceY = 0;
         }
         // Draw current player 448, 352
-        ctxMain.drawImage(imageFaun, 0, 0, 128, 256,
+        ctxMain.drawImage(player.sprite.name, 0, 0, 128, 256,
           Math.min(448, (448 + player.pos.x)), 
           // 128 x 192
           Math.min(352, (352 + player.pos.y)), 64, 148);
@@ -402,7 +402,7 @@ if (Meteor.isServer) {
           z: 0
         },
         sprite: {
-          name: "imageFaun",
+          name: imageFaun,
           size: {
             x: 128,
             y: 256
