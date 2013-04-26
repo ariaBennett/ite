@@ -1,3 +1,9 @@
+@font-face {  
+  font-family: ct_prop;  
+  src: url( fonts/ct_prop.ttf ) format("truetype");  
+}  
+
+
 html, body {
   /* Prevents scrollbars */
   overflow: hidden;
@@ -17,4 +23,8 @@ html, body {
 
 #canvasMain {
     border: solid black 1px;
+    /*
+    font-size: 136.499992370605455px;
+    */
+    font-size: 48px;
 }

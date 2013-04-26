@@ -37,6 +37,8 @@ if (Meteor.isClient) {
   });
   
   function prewarm () {
+    // Setup defaults for certain Session Variables
+    Session.set("playerNamesEnabled", "1");
     Deps.autorun ( function () {
       if (Meteor.user()) {
         if (getPlayer = Players.findOne({"name.first": Meteor.user().username})) {
@@ -53,16 +55,16 @@ if (Meteor.isClient) {
     });
   }
 
-  function canvasMainImagesDeclare () {
+  function canvasMainResourcesDeclare () {
     imageBackground = new Image();
     imageMainPlayer = new Image();
     imageFaun = new Image();
   }
 
-  function canvasMainImagesPreload () {
+  function canvasMainResourcesPreload () {
     imageBackground.src = "assets/test/ChronoTrigger600CathedralBG_Big.png";
     imageMainPlayer.src = "assets/test/magus_sheet_movement_big.png";
-          imageFaun.src = "assets/Michael/CharacterModel-Faun64x128.png";
+    imageFaun.src = "assets/Michael/CharacterModel-Faun128x256.png";
   }
   
   function canvasMainSetup () {
@@ -76,8 +78,8 @@ if (Meteor.isClient) {
     })();
     canvasMain = document.getElementById("canvasMain");
     ctxMain = canvasMain.getContext("2d");
-    canvasMainImagesDeclare();
-    canvasMainImagesPreload();
+    canvasMainResourcesDeclare();
+    canvasMainResourcesPreload();
     sliceX = 0;
     sliceY = 0;
   }
@@ -125,10 +127,18 @@ if (Meteor.isClient) {
         if (relation === "below") {
           _.each(players, function (player) {
             if (playerCurrent_id !== player._id && 
-                player.pos.y <= relationalObject.pos.y) {
+                player.pos.y + (relationalObject.pos.y - player.pos.y)
+                <= relationalObject.pos.y) {
               // Temporary player animation
               var playerSliceX = 0;
               var playerSliceY = 0;
+              var relativeX = player.pos.x - relationalObject.pos.x 
+                + Math.min(512 - player.sprite.size.display.x/2, 
+                (512 - player.sprite.size.display.x/2 + relationalObject.pos.x));
+              var relativeY = player.pos.y - relationalObject.pos.y 
+                + Math.min(448 - player.sprite.size.display.y/2, 
+                (448 - player.sprite.size.display.y/2 + relationalObject.pos.y));
+
               if (player.animation.facing === "left") {
                 playerSliceX = player.sprite.slice.left.x;
                 playerSliceY = player.sprite.slice.left.y;
@@ -145,11 +155,17 @@ if (Meteor.isClient) {
                 playerSliceX = player.sprite.slice.down.x;
                 playerSliceY = player.sprite.slice.down.y;
               }
-              ctxMain.drawImage(window[player.sprite.name], playerSliceX, playerSliceY, 128, 192,
-                player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
-                // 128 x 192
-                player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
-                128, 192);
+              ctxMain.drawImage(window[player.sprite.name], 
+                playerSliceX, playerSliceY, 
+                player.sprite.size.source.x, player.sprite.size.source.y,
+                relativeX,
+                relativeY,
+                player.sprite.size.display.x, player.sprite.size.display.y);
+                // Draw Name
+                drawName(
+                  player,
+                  [relativeX + player.sprite.size.display.x/2, relativeY - 10]
+                )
             }
           });
         }
@@ -160,6 +176,13 @@ if (Meteor.isClient) {
               // Temporary player animation
               var playerSliceX = 0;
               var playerSliceY = 0;
+              var relativeX = player.pos.x - relationalObject.pos.x 
+                + Math.min(512 - player.sprite.size.display.x/2, 
+                (512 - player.sprite.size.display.x/2 + relationalObject.pos.x));
+              var relativeY = player.pos.y - relationalObject.pos.y 
+                + Math.min(448 - player.sprite.size.display.y/2, 
+                (448 - player.sprite.size.display.y/2 + relationalObject.pos.y));
+
               if (player.animation.facing === "left") {
                 playerSliceX = player.sprite.slice.left.x;
                 playerSliceY = player.sprite.slice.left.y;
@@ -176,11 +199,18 @@ if (Meteor.isClient) {
                 playerSliceX = player.sprite.slice.down.x;
                 playerSliceY = player.sprite.slice.down.y;
               }
-              ctxMain.drawImage(window[player.sprite.name], playerSliceX, playerSliceY, 128, 192,
-                player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
-                // 128 x 192
-                player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
-                128, 192);
+
+              ctxMain.drawImage(window[player.sprite.name], 
+                playerSliceX, playerSliceY, 
+                player.sprite.size.source.x, player.sprite.size.source.y,
+                relativeX, 
+                relativeY,
+                player.sprite.size.display.x, player.sprite.size.display.y);
+                // Draw Name
+                drawName(
+                  player,
+                  [relativeX + player.sprite.size.display.x/2, relativeY - 10]
+                )
             }
           });
         }
@@ -206,14 +236,22 @@ if (Meteor.isClient) {
                 playerSliceX = player.sprite.slice.down.x;
                 playerSliceY = player.sprite.slice.down.y;
               }
-              ctxMain.drawImage(player.sprite.name, playerSliceX, playerSliceY, 128, 192,
+              ctxMain.drawImage(window[player.sprite.name], 
+                playerSliceX, playerSliceY, 
+                player.sprite.size.source.x, player.sprite.size.source.y,
                 player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
                 // 128 x 192
                 player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
-                128, 192);
+                player.sprite.size.display.x, player.sprite.size.display.y);
             }
           });
         }
+      }
+
+      function drawTestSquare(style, draw) {
+        ctxMain.fillStyle = "rgba(" + style[0] + "," + style[1] 
+          + "," + style[2] + "," + style[3] + ")";
+        ctxMain.fillRect(draw[0], draw[1], draw[2], draw[3]);
       }
 
       function drawPlayer(player) {
@@ -222,29 +260,57 @@ if (Meteor.isClient) {
 
         // Temporary player facing animation
         if (Session.equals("keyArrowLeft", "down")) {
-          sliceX = 0;
-          sliceY = 0;
-        }
-        else if (Session.equals("keyArrowRight", "down")) {
-          sliceX = 256;
-          sliceY = 0;
+          sliceX = player.sprite.slice.left.x;
+          sliceY = player.sprite.slice.left.y;
         }
         else if (Session.equals("keyArrowUp", "down")) {
-          sliceX = 128;
-          sliceY = 0;
+          sliceX = player.sprite.slice.up.x;
+          sliceY = player.sprite.slice.up.y;
+        }
+        else if (Session.equals("keyArrowRight", "down")) {
+          sliceX = player.sprite.slice.right.x;
+          sliceY = player.sprite.slice.right.y;
         }
         else if (Session.equals("keyArrowDown", "down")) {
-          sliceX = 384;
-          sliceY = 0;
+          sliceX = player.sprite.slice.down.x;
+          sliceY = player.sprite.slice.down.y;
         }
+        
+
         // Draw current player 448, 352
+        // 128 x 192
         ctxMain.drawImage(window[player.sprite.name], 
           sliceX, sliceY, 
-          player.sprite.size.x, player.sprite.size.y,
-          Math.min(448, (448 + player.pos.x)), 
-          // 128 x 192
-          Math.min(352, (352 + player.pos.y)), 
-          player.sprite.size.x, player.sprite.size.y);
+          player.sprite.size.source.x, player.sprite.size.source.y,
+          Math.min(512 - (player.sprite.size.display.x/2), 
+          (512 - (player.sprite.size.display.x/2) + player.pos.x)), 
+          Math.min(448 - (player.sprite.size.display.y/2), 
+          (448 - (player.sprite.size.display.y/2) + player.pos.y)), 
+          player.sprite.size.display.x, player.sprite.size.display.y);
+        drawName(
+          player,
+          [Math.min(512, 
+            (512 + player.pos.x)), 
+            Math.min(448 - 10 - (player.sprite.size.display.y/2), 
+            (448 - (player.sprite.size.display.y/2) + player.pos.y))]
+        )
+      }
+
+      function drawName(player, position, enabled) {
+        //               Parameter Guide
+        //     (Type) |      (Name)      | (Description)
+        //
+        //   Document |      player      | Single player document
+        // [int, int] |     position     | [x,y] positioning
+        // 
+        if (Session.equals("playerNamesEnabled", "1")) {
+          ctxMain.textAlign = "center";
+          ctxMain.font = "normal 1em ct_prop";
+          ctxMain.fillStyle = "white";
+          ctxMain.fillText(player.name.first, position[0], position[1]);
+          ctxMain.strokeStyle = "black";
+          ctxMain.strokeText(player.name.first, position[0], position[1]);
+        }
       }
 
       // All code that actually draws on the canvas should
@@ -268,13 +334,13 @@ if (Meteor.isClient) {
     // keydown
     window.addEventListener("keydown", function (event) {
       // Movement
-      // Up Arrow
-      if (event.keyCode === 38) {
-        Session.set("keyArrowUp", "down");
-      }
       // Left Arrow
       if (event.keyCode === 37) {
         Session.set("keyArrowLeft", "down");
+      }
+      // Up Arrow
+      if (event.keyCode === 38) {
+        Session.set("keyArrowUp", "down");
       }
       // Right Arrow
       if (event.keyCode === 39) {
@@ -296,13 +362,13 @@ if (Meteor.isClient) {
     // keyup
     window.addEventListener("keyup", function (event) {
       // Movement
-      // Up Arrow
-      if (event.keyCode === 38) {
-        Session.set("keyArrowUp", "up");
-      }
       // Left Arrow
       if (event.keyCode === 37) {
         Session.set("keyArrowLeft", "up");
+      }
+      // Up Arrow
+      if (event.keyCode === 38) {
+        Session.set("keyArrowUp", "up");
       }
       // Right Arrow
       if (event.keyCode === 39) {
@@ -327,13 +393,13 @@ if (Meteor.isClient) {
       if (playerCurrent_id) {
         moveAmount = 4;
         // Movement
-        // Up Arrow, Negative Y
-        if (Session.equals("keyArrowUp", "down")) {
-            Meteor.call("incrementPlayerPosition", playerCurrent_id, 0, -moveAmount, "up");
-        }
         // Left Arrow, Negative X
         if (Session.equals("keyArrowLeft", "down")) {
             Meteor.call("incrementPlayerPosition", playerCurrent_id, -moveAmount, 0, "left");
+        }
+        // Up Arrow, Negative Y
+        if (Session.equals("keyArrowUp", "down")) {
+            Meteor.call("incrementPlayerPosition", playerCurrent_id, 0, -moveAmount, "up");
         }
         // Right Arrow, Positive X
         if (Session.equals("keyArrowRight", "down")) {
@@ -346,7 +412,20 @@ if (Meteor.isClient) {
         // Actions
         // Space
         if (Session.get("keySpace") === "down") {
-          console.log("Space Pressed");
+          // Convert current player to a faun model
+
+          //                               Parameter Explaination:
+          //                           String | Name of Server Method
+          //                           String | ID of player to alter
+          //                           [x, y] | Size of source image
+          //                           [x, y] | Size to display image as
+          // [ [x, y], [x, y],[x, y],[x, y] ] | Slices [ [left], [up], [right], [down] ]
+          Meteor.call("changePlayerSprite", 
+            playerCurrent_id, 
+            "imageFaun", 
+            [128, 256],
+            [64, 128],
+            [ [0,0],[0,0],[0,0],[0,0] ]);
         }
       }
     }, 12);
@@ -407,20 +486,26 @@ if (Meteor.isServer) {
         sprite: {
           name: "imageMainPlayer",
           size: {
-            x: 128,
-            y: 192
+            source: {
+              x: 128,
+              y: 128
+            },
+            display: {
+              x: 128,
+              y: 128
+            }
           },
           slice: {
             left: {
               x: 0,
               y: 0
             },
-            right: {
-              x: 256,
-              y: 0
-            },
             up: {
               x: 128,
+              y: 0
+            },
+            right: {
+              x: 256,
               y: 0
             },
             down: {
@@ -479,6 +564,55 @@ if (Meteor.isServer) {
       Players.update(id, {$inc: {"pos.x": x}});
       Players.update(id, {$inc: {"pos.y": y}});
       Players.update(id, {$set: {"animation.facing": facing}});
+    },
+
+    changePlayerSprite: function (id, name, sizeSource, sizeDisplay, slice) {
+      /*
+      Players.update(id, {$set: {"sprite.name": name}}); 
+      Players.update(id, {$set: {"sprite.size.x": size[x]}}); 
+      Players.update(id, {$set: {"sprite.size.y": size[y]}}); 
+      Players.update(id, {$set: {"sprite.slice.left.x": slice[0[0]]}}); 
+      Players.update(id, {$set: {"sprite.slice.left.y": slice[0[1]]}}); 
+      Players.update(id, {$set: {"sprite.slice.up.x": slice[1[0]]}}); 
+      Players.update(id, {$set: {"sprite.slice.up.y": slice[1[1]]}}); 
+      Players.update(id, {$set: {"sprite.slice.right.x": slice[2[0]]}}); 
+      Players.update(id, {$set: {"sprite.slice.right.y": slice[2[1]]}}); 
+      Players.update(id, {$set: {"sprite.slice.down.x": slice[3[0]]}}); 
+      Players.update(id, {$set: {"sprite.slice.down.y": slice[3[1]]}});
+     */
+      Players.update(id, {$set: { 
+        sprite: {
+          name: name,
+          size: {
+            source: {
+              x: sizeSource[0], 
+              y: sizeSource[1]
+            },
+            display: {
+              x: sizeDisplay[0], 
+              y: sizeDisplay[1]
+            }
+          },
+          slice: {
+            left: {
+              x: slice[0[0]],
+              y: slice[0[1]]
+            },
+            up: {
+              x: slice[1[0]],
+              y: slice[1[1]]
+            },
+            right: {
+              x: slice[2[0]],
+              y: slice[2[1]]
+            },
+            down: {
+              x: slice[3[0]],
+              y: slice[3[1]]
+            }
+          }
+        }
+      }});
     }
   });
 
