@@ -44,6 +44,7 @@ if (Meteor.isClient) {
         if (getPlayer = Players.findOne({"name.first": Meteor.user().username})) {
           playerCurrent_id = getPlayer._id;
           me = getPlayer;
+          zone = Zones.findOne({name: me.zone.name});
           playersInZone = Players.find({"zone.name": getPlayer.zone.name, "online": "true"},
             {sort: {"pos.y": 1}}, {sort: {"pos.z": 1}}).fetch();
         }
@@ -59,12 +60,20 @@ if (Meteor.isClient) {
     imageBackground = new Image();
     imageMainPlayer = new Image();
     imageFaun = new Image();
+    imageCTCathedralAboveNoPass = new Image();
+    imageCTCathedralAbovePass = new Image();
+    imageCTCathedralBelowNoPass = new Image();
+    imageCTCathedralBelowPass = new Image();
   }
 
   function canvasMainResourcesPreload () {
     imageBackground.src = "assets/test/ChronoTrigger600CathedralBG_Big.png";
     imageMainPlayer.src = "assets/test/magus_sheet_movement_big.png";
     imageFaun.src = "assets/Michael/CharacterModel-Faun128x256.png";
+    imageCTCathedralAboveNoPass.src = "assets/zones/ct_cathedral/64x64/above_nopass/1.png"; 
+    imageCTCathedralAbovePass.src = "assets/zones/ct_cathedral/64x64/above_pass/1.png";
+    imageCTCathedralBelowNoPass.src = "assets/zones/ct_cathedral/64x64/below_nopass/1.png";
+    imageCTCathedralBelowPass.src = "assets/zones/ct_cathedral/64x64/below_pass/1.png";
   }
   
   function canvasMainSetup () {
@@ -77,7 +86,9 @@ if (Meteor.isClient) {
       };
     })();
     canvasMain = document.getElementById("canvasMain");
+    canvasData = document.getElementById("canvasData");
     ctxMain = canvasMain.getContext("2d");
+    ctxData = canvasData.getContext("2d");
     canvasMainResourcesDeclare();
     canvasMainResourcesPreload();
     sliceX = 0;
@@ -93,6 +104,10 @@ if (Meteor.isClient) {
         ctxMain.clearRect (0, 0, 1024, 896);
       }
 
+      function clearCanvasData () {
+        ctxData.clearRect(0, 0, canvasData.width, canvasData.height);
+      }
+
       function drawEnviroment (relationalObject, relation) {
         // relationalObject should be the player,
         // relation should be either above, below,
@@ -103,10 +118,27 @@ if (Meteor.isClient) {
         // until enviroment structure is more apparent.
 
         // Draw Floor of Player's Zone
+        
         if (playerCurrent_id) {
-          ctxMain.drawImage(imageBackground, 
-            Math.min(-relationalObject.pos.x, 0), 
-            Math.min(-relationalObject.pos.y, 0), 4480, 11840);
+
+          function drawImageAtRelationalObject (image) {
+            ctxMain.drawImage(image, 
+              Math.min(-relationalObject.pos.x, 0), 
+              Math.min(-relationalObject.pos.y, 0), 
+              image.width,
+              image.height);
+          }
+
+          if (relation === "below") {
+            _.each(zone.layers.below, function (layer) {
+              drawImageAtRelationalObject(window[layer[0]]);
+            });
+          }
+          else if (relation === "above") {
+            _.each(zone.layers.above, function (layer) {
+              drawImageAtRelationalObject(window[layer[0]]);
+            });
+          }
         }
       }
 
@@ -316,10 +348,12 @@ if (Meteor.isClient) {
       // All code that actually draws on the canvas should
       // go below here.
       clearCanvas();
+      clearCanvasData();
       drawEnviroment(me, "below");
       drawPlayersOther(playersInZone, me, "below");
       drawPlayer(me);
       drawPlayersOther(playersInZone, me, "above");
+      drawEnviroment(me, "above");
     }
   }
   
@@ -631,6 +665,16 @@ if (Meteor.isServer) {
     if (!Zones.findOne({"name": "ct_cathedral"})) {
       Zones.insert( {
         name: "ct_cathedral",
+        layers: {
+          below: [
+            ["imageCTCathedralBelowNoPass", "nopass"],
+            ["imageCTCathedralBelowPass", "pass"]
+          ],
+          above: [
+            ["imageCTCathedralAboveNoPass", "nopass"],
+            ["imageCTCathedralAbovePass", "pass"]
+          ]
+        },
         players: {
           online: [],
           offline: []
