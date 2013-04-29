@@ -57,23 +57,40 @@ if (Meteor.isClient) {
   }
 
   function canvasMainResourcesDeclare () {
-    imageBackground = new Image();
+
     imageMainPlayer = new Image();
     imageFaun = new Image();
+
+    // CTCathedral Files
+    ct_cathedral_1_1 = new Image();
+    ct_cathedral_1_2 = new Image();
+    ct_cathedral_1_3 = new Image();
+    ct_cathedral_1_4 = new Image();
+    /*
+    imageBackground = new Image();
     imageCTCathedralAboveNoPass = new Image();
     imageCTCathedralAbovePass = new Image();
     imageCTCathedralBelowNoPass = new Image();
     imageCTCathedralBelowPass = new Image();
+    */
   }
 
   function canvasMainResourcesPreload () {
-    imageBackground.src = "assets/test/ChronoTrigger600CathedralBG_Big.png";
+    ct_cathedral_1_1.src = "assets/zones/ct_cathedral/64x64/rooms/1/1.png";
+    ct_cathedral_1_2.src = "assets/zones/ct_cathedral/64x64/rooms/1/2.png";
+    ct_cathedral_1_3.src = "assets/zones/ct_cathedral/64x64/rooms/1/3.png";
+    ct_cathedral_1_4.src = "assets/zones/ct_cathedral/64x64/rooms/1/4.png";
+
+    
     imageMainPlayer.src = "assets/test/magus_sheet_movement_big.png";
     imageFaun.src = "assets/Michael/CharacterModel-Faun128x256.png";
+    /*
+    imageBackground.src = "assets/test/ChronoTrigger600CathedralBG_Big.png";
     imageCTCathedralAboveNoPass.src = "assets/zones/ct_cathedral/64x64/above_nopass/1.png"; 
     imageCTCathedralAbovePass.src = "assets/zones/ct_cathedral/64x64/above_pass/1.png";
     imageCTCathedralBelowNoPass.src = "assets/zones/ct_cathedral/64x64/below_nopass/1.png";
     imageCTCathedralBelowPass.src = "assets/zones/ct_cathedral/64x64/below_pass/1.png";
+    */
   }
   
   function canvasMainSetup () {
@@ -117,7 +134,6 @@ if (Meteor.isClient) {
         // are not implemented at this time, waiting
         // until enviroment structure is more apparent.
 
-        // Draw Floor of Player's Zone
         
         if (playerCurrent_id) {
 
@@ -131,12 +147,12 @@ if (Meteor.isClient) {
 
           if (relation === "below") {
             _.each(zone.layers.below, function (layer) {
-              drawImageAtRelationalObject(window[layer[0]]);
+              drawImageAtRelationalObject(window[layer]);
             });
           }
           else if (relation === "above") {
             _.each(zone.layers.above, function (layer) {
-              drawImageAtRelationalObject(window[layer[0]]);
+              drawImageAtRelationalObject(window[layer]);
             });
           }
         }
@@ -348,7 +364,7 @@ if (Meteor.isClient) {
       // All code that actually draws on the canvas should
       // go below here.
       clearCanvas();
-      clearCanvasData();
+      //clearCanvasData();
       drawEnviroment(me, "below");
       drawPlayersOther(playersInZone, me, "below");
       drawPlayer(me);
@@ -513,8 +529,8 @@ if (Meteor.isServer) {
           name: "ct_cathedral"
         },
         pos: {
-          x: 1984,
-          y: 352,
+          x: 0,
+          y: 0,
           z: 0
         },
         sprite: {
@@ -667,12 +683,12 @@ if (Meteor.isServer) {
         name: "ct_cathedral",
         layers: {
           below: [
-            ["imageCTCathedralBelowNoPass", "nopass"],
-            ["imageCTCathedralBelowPass", "pass"]
+            "ct_cathedral_1_3",
+            "ct_cathedral_1_4"
           ],
           above: [
-            ["imageCTCathedralAboveNoPass", "nopass"],
-            ["imageCTCathedralAbovePass", "pass"]
+            "ct_cathedral_1_1",
+            "ct_cathedral_1_2"
           ]
         },
         players: {

@@ -22,12 +22,14 @@ html, body {
 }
 
 #canvasMain {
-/bin/bash: :quit: command not found
-    /*
-    font-size: 136.499992370605455px;
-    */
-    font-size: 48px;
+  /*
+  font-size: 136.499992370605455px;
+  */
+  border-style: solid;
+  border-width: 1px;
+  font-size: 48px;
 }
 
 #canvasData {
+  display: none;
 }
