@@ -30,6 +30,10 @@ html, body {
   font-size: 48px;
 }
 
-#canvasData {
+#canvasDataAbove {
   display: none;
 }
+#canvasDataBelow {
+  display: none;
+} 
+

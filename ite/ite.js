@@ -17,8 +17,9 @@ Zones = new Meteor.Collection("Zones");
 // from me personally you should not be 
 // viewing anything in this project.
 //
-// Thank you
-// Aria Bennett
+// Thank you,
+//
+// -Aria Bennett
 
 // Client
 if (Meteor.isClient) {
@@ -57,15 +58,14 @@ if (Meteor.isClient) {
   }
 
   function canvasMainResourcesDeclare () {
-
     imageMainPlayer = new Image();
     imageFaun = new Image();
 
     // CTCathedral Files
-    ct_cathedral_1_1 = new Image();
-    ct_cathedral_1_2 = new Image();
-    ct_cathedral_1_3 = new Image();
-    ct_cathedral_1_4 = new Image();
+    ct_cathedral_3_1 = new Image();
+    ct_cathedral_3_2 = new Image();
+    ct_cathedral_3_3 = new Image();
+    ct_cathedral_3_4 = new Image();
     /*
     imageBackground = new Image();
     imageCTCathedralAboveNoPass = new Image();
@@ -76,10 +76,10 @@ if (Meteor.isClient) {
   }
 
   function canvasMainResourcesPreload () {
-    ct_cathedral_1_1.src = "assets/zones/ct_cathedral/64x64/rooms/1/1.png";
-    ct_cathedral_1_2.src = "assets/zones/ct_cathedral/64x64/rooms/1/2.png";
-    ct_cathedral_1_3.src = "assets/zones/ct_cathedral/64x64/rooms/1/3.png";
-    ct_cathedral_1_4.src = "assets/zones/ct_cathedral/64x64/rooms/1/4.png";
+    ct_cathedral_3_1.src = "assets/zones/ct_cathedral/64x64/rooms/3/1.png";
+    ct_cathedral_3_2.src = "assets/zones/ct_cathedral/64x64/rooms/3/2.png";
+    ct_cathedral_3_3.src = "assets/zones/ct_cathedral/64x64/rooms/3/3.png";
+    ct_cathedral_3_4.src = "assets/zones/ct_cathedral/64x64/rooms/3/4.png";
 
     
     imageMainPlayer.src = "assets/test/magus_sheet_movement_big.png";
@@ -103,13 +103,17 @@ if (Meteor.isClient) {
       };
     })();
     canvasMain = document.getElementById("canvasMain");
-    canvasData = document.getElementById("canvasData");
+    canvasDataAbove = document.getElementById("canvasDataAbove");
+    canvasDataBelow = document.getElementById("canvasDataBelow");
     ctxMain = canvasMain.getContext("2d");
-    ctxData = canvasData.getContext("2d");
+    ctxDataAbove = canvasDataAbove.getContext("2d");
+    ctxDataBelow = canvasDataBelow.getContext("2d");
+    canvasDataLoaded = 0;
     canvasMainResourcesDeclare();
     canvasMainResourcesPreload();
     sliceX = 0;
     sliceY = 0;
+
   }
 
   function drawCanvasMain () {
@@ -121,8 +125,8 @@ if (Meteor.isClient) {
         ctxMain.clearRect (0, 0, 1024, 896);
       }
 
-      function clearCanvasData () {
-        ctxData.clearRect(0, 0, canvasData.width, canvasData.height);
+      function clearCanvasEntire (ctx) {
+        ctx.clearRect(0, 0, ctx.width, ctx.height);
       }
 
       function drawEnviroment (relationalObject, relation) {
@@ -139,21 +143,23 @@ if (Meteor.isClient) {
 
           function drawImageAtRelationalObject (image) {
             ctxMain.drawImage(image, 
-              Math.min(-relationalObject.pos.x, 0), 
-              Math.min(-relationalObject.pos.y, 0), 
+              Math.max(
+                Math.min(-relationalObject.pos.x, 0), 
+                -image.width + 1024
+              ),
+              Math.max(
+                Math.min(-relationalObject.pos.y, 0), 
+                -image.height + 896
+              ),
               image.width,
               image.height);
           }
 
           if (relation === "below") {
-            _.each(zone.layers.below, function (layer) {
-              drawImageAtRelationalObject(window[layer]);
-            });
+            drawImageAtRelationalObject(canvasDataBelow);
           }
           else if (relation === "above") {
-            _.each(zone.layers.above, function (layer) {
-              drawImageAtRelationalObject(window[layer]);
-            });
+            drawImageAtRelationalObject(canvasDataAbove);
           }
         }
       }
@@ -330,10 +336,17 @@ if (Meteor.isClient) {
         ctxMain.drawImage(window[player.sprite.name], 
           sliceX, sliceY, 
           player.sprite.size.source.x, player.sprite.size.source.y,
-          Math.min(512 - (player.sprite.size.display.x/2), 
-          (512 - (player.sprite.size.display.x/2) + player.pos.x)), 
-          Math.min(448 - (player.sprite.size.display.y/2), 
-          (448 - (player.sprite.size.display.y/2) + player.pos.y)), 
+          Math.min(
+            Math.max(
+              512 - (player.sprite.size.display.x/2), 
+              512 - (player.sprite.size.display.x/2) 
+            ),
+            (512 - (player.sprite.size.display.x/2) + player.pos.x)
+          ), 
+          Math.min(
+            448 - (player.sprite.size.display.y/2), 
+            (448 - (player.sprite.size.display.y/2) + player.pos.y)
+          ), 
           player.sprite.size.display.x, player.sprite.size.display.y);
         drawName(
           player,
@@ -375,6 +388,19 @@ if (Meteor.isClient) {
   
   function canvasMainDrawLoop () {
     (function animloop(){
+      if (!canvasDataLoaded && canvasDataBelow.getContext && playerCurrent_id) {
+          canvasDataBelow.width = window[zone.layers.below[0]].width;
+          canvasDataBelow.height = window[zone.layers.below[0]].height;
+        _.each(zone.layers.below, function (layer) {
+          ctxDataBelow.drawImage(window[layer], 0, 0);
+        });
+          canvasDataAbove.width = window[zone.layers.above[0]].width;
+          canvasDataAbove.height = window[zone.layers.above[0]].height;
+        _.each(zone.layers.above, function (layer) {
+          ctxDataAbove.drawImage(window[layer], 0, 0);
+        });
+        canvasDataLoaded = 1;
+      }
       requestAnimFrame(animloop);
       drawCanvasMain();
     })();
@@ -617,19 +643,6 @@ if (Meteor.isServer) {
     },
 
     changePlayerSprite: function (id, name, sizeSource, sizeDisplay, slice) {
-      /*
-      Players.update(id, {$set: {"sprite.name": name}}); 
-      Players.update(id, {$set: {"sprite.size.x": size[x]}}); 
-      Players.update(id, {$set: {"sprite.size.y": size[y]}}); 
-      Players.update(id, {$set: {"sprite.slice.left.x": slice[0[0]]}}); 
-      Players.update(id, {$set: {"sprite.slice.left.y": slice[0[1]]}}); 
-      Players.update(id, {$set: {"sprite.slice.up.x": slice[1[0]]}}); 
-      Players.update(id, {$set: {"sprite.slice.up.y": slice[1[1]]}}); 
-      Players.update(id, {$set: {"sprite.slice.right.x": slice[2[0]]}}); 
-      Players.update(id, {$set: {"sprite.slice.right.y": slice[2[1]]}}); 
-      Players.update(id, {$set: {"sprite.slice.down.x": slice[3[0]]}}); 
-      Players.update(id, {$set: {"sprite.slice.down.y": slice[3[1]]}});
-     */
       Players.update(id, {$set: { 
         sprite: {
           name: name,
@@ -683,12 +696,12 @@ if (Meteor.isServer) {
         name: "ct_cathedral",
         layers: {
           below: [
-            "ct_cathedral_1_3",
-            "ct_cathedral_1_4"
+            "ct_cathedral_3_3",
+            "ct_cathedral_3_4"
           ],
           above: [
-            "ct_cathedral_1_1",
-            "ct_cathedral_1_2"
+            "ct_cathedral_3_1",
+            "ct_cathedral_3_2"
           ]
         },
         players: {
