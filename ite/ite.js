@@ -60,6 +60,7 @@ if (Meteor.isClient) {
   function canvasMainResourcesDeclare () {
     imageMainPlayer = new Image();
     imageFaun = new Image();
+    imageCrystalBeast = new Image();
 
     // CTCathedral Files
     ct_cathedral_3_1 = new Image();
@@ -84,6 +85,7 @@ if (Meteor.isClient) {
     
     imageMainPlayer.src = "assets/test/magus_sheet_movement_big.png";
     imageFaun.src = "assets/Michael/CharacterModel-Faun128x256.png";
+    imageCrystalBeast.src = "assets/Michael/crystalbeastpixeld384x192.png";
     /*
     imageBackground.src = "assets/test/ChronoTrigger600CathedralBG_Big.png";
     imageCTCathedralAboveNoPass.src = "assets/zones/ct_cathedral/64x64/above_nopass/1.png"; 
@@ -133,10 +135,6 @@ if (Meteor.isClient) {
         // relationalObject should be the player,
         // relation should be either above, below,
         // or both.
-        //
-        // NOTE: relational aspects of this function
-        // are not implemented at this time, waiting
-        // until enviroment structure is more apparent.
 
         
         if (playerCurrent_id) {
@@ -488,19 +486,20 @@ if (Meteor.isClient) {
         // Actions
         // Space
         if (Session.get("keySpace") === "down") {
-          // Convert current player to a faun model
+          // Convert current player to a different model
 
           //                               Parameter Explaination:
           //                           String | Name of Server Method
           //                           String | ID of player to alter
+          //                           String | Name of source image object
           //                           [x, y] | Size of source image
           //                           [x, y] | Size to display image as
           // [ [x, y], [x, y],[x, y],[x, y] ] | Slices [ [left], [up], [right], [down] ]
           Meteor.call("changePlayerSprite", 
             playerCurrent_id, 
-            "imageFaun", 
-            [128, 256],
-            [64, 128],
+            "imageCrystalBeast", 
+            [384, 192],
+            [384, 192],
             [ [0,0],[0,0],[0,0],[0,0] ]);
         }
       }
