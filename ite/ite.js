@@ -179,8 +179,7 @@ if (Meteor.isClient) {
         if (relation === "below") {
           _.each(players, function (player) {
             if (playerCurrent_id !== player._id && 
-                player.pos.y + (relationalObject.pos.y - player.pos.y)
-                <= relationalObject.pos.y) {
+                player.pos.y <= relationalObject.pos.y) {
               // Temporary player animation
               var playerSliceX = 0;
               var playerSliceY = 0;
