@@ -360,6 +360,7 @@ if (Meteor.isClient) {
         //
         //   Document |      player      | Single player document
         // [int, int] |     position     | [x,y] positioning
+        //   [string] |     enabled      | "0" or "1", determines if names are shown
         // 
         if (Session.equals("playerNamesEnabled", "1")) {
           ctxMain.textAlign = "center";
