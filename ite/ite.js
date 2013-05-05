@@ -23,6 +23,26 @@ Zones = new Meteor.Collection("Zones");
 
 // Shared Methods
 Meteor.methods({
+  updateHitboxes: function (id, type) {
+    if (type === "player") {
+      player = Players.findOne({_id: id});
+      Players.update(id, {$set: {
+        hitbox: {
+          collision: {
+            pos: {
+              x: player.pos.x - 32,
+              y: player.pos.y - 64
+            },
+            size: {
+              x: 64,
+              y: 64
+            }
+          }
+        }
+      }});
+    }
+  },
+
   incrementPlayerPosition: function (id, x, y, facing) {
     player = Players.findOne({_id: id});
     zone = Zones.findOne({name: "player.zone.name"});
@@ -38,6 +58,7 @@ Meteor.methods({
     Players.update(id, {$inc: {"pos.x": x}});
     Players.update(id, {$inc: {"pos.y": y}});
     Players.update(id, {$set: {"animation.facing": facing}});
+    Meteor.call("updateHitboxes", id, "player");
   }
 });
 
@@ -130,20 +151,26 @@ if (Meteor.isClient) {
     sliceY = 0;
     canvasMainWidth = 1024;
     canvasMainHeight = 896;
-
+    focalPointX = 400;
+    focalPointY = 400;
   }
 
   function drawCanvasMain () {
     // Draw updates to the main game canvas
     if (canvasMain.getContext && playerCurrent_id) {
 
-      function clearCanvas () {
+      function clearCanvas (posX, posY, sizeX, sizeY) {
         // Clear Canvas
-        ctxMain.clearRect (0, 0, canvasMainWidth, canvasMainHeight);
+        ctxMain.clearRect (posX, posY, sizeX, sizeY);
       }
 
       function clearCanvasEntire (ctx) {
         ctx.clearRect(0, 0, ctx.width, ctx.height);
+      }
+
+      function updateFocalPoints(x, y) {
+        focalPointX = Math.min(x, 512);
+        focalPointY = Math.min(y, 448);
       }
 
       function drawEnviroment (relationalObject, relation) {
@@ -156,10 +183,14 @@ if (Meteor.isClient) {
 
           function drawImageAtRelationalObject (image) {
             ctxMain.drawImage(image, 
-              -(relationalObject.pos.x),
-              -(relationalObject.pos.y),
-              image.width,
-              image.height);
+              relationalObject.pos.x,
+              relationalObject.pos.y,
+              canvasMainWidth,
+              canvasMainHeight,
+              0,
+              0,
+              canvasMainWidth,
+              canvasMainHeight);
           }
 
           if (relation === "below") {
@@ -308,10 +339,10 @@ if (Meteor.isClient) {
         }
       }
 
-      function drawTestSquare(style, draw) {
+      function drawTestSquare(style, aX, aY, bX, bY) {
         ctxMain.fillStyle = "rgba(" + style[0] + "," + style[1] 
           + "," + style[2] + "," + style[3] + ")";
-        ctxMain.fillRect(draw[0], draw[1], draw[2], draw[3]);
+        ctxMain.fillRect(aX, aY, bX, bY);
       }
 
       function getPoint(target, point) {
@@ -457,25 +488,32 @@ if (Meteor.isClient) {
           sliceX = player.sprite.slice.down.x;
           sliceY = player.sprite.slice.down.y;
         }
+        function centerWidth (target) {
+          return getPoint(target, "bottom-center")[0];
+        }
+        function centerHeight (target) {
+          return getPoint(target, "bottom-center")[1];
+        }
         // Draw current player, and center camera on them.
         ctxMain.drawImage(window[player.sprite.name], 
           sliceX, sliceY, 
           player.sprite.size.source.x, player.sprite.size.source.y,
-          Math.min(
-            getPoint(player, "bottom-center")[0],
-            canvasMainWidth/2 + getPointDifference(player, "center-center")[0]
-          ),
-          Math.min(
-            getPoint(player, "bottom-center")[1],
-            canvasMainHeight/2 + getPointDifference(player, "center-center")[1]
-          ),
+          centerWidth(player),
+          centerHeight(player),
           player.sprite.size.display.x, player.sprite.size.display.y);
         drawName(
           player,
-          [Math.min(canvasMainWidth/2, 
-            (canvasMainWidth/2 + player.pos.x)), 
-            Math.min(canvasMainHeight/2 - 10 - (player.sprite.size.display.y/2), 
-            (canvasMainHeight/2 - (player.sprite.size.display.y/2) + player.pos.y))]
+          [
+            centerWidth(player), 
+            centerHeight(player) 
+          ]
+        );
+        drawTestSquare(
+          [255,0,0,1], 
+          player.hitbox.collision.pos.x, 
+          player.hitbox.collision.pos.y, 
+          player.hitbox.collision.size.x,
+          player.hitbox.collision.size.y
         );
       }
 
@@ -499,7 +537,11 @@ if (Meteor.isClient) {
 
       // All code that actually draws on the canvas should
       // go below here.
-      clearCanvas();
+      updateFocalPoints(
+        getPoint(playerCurrent, "bottom-center")[0], 
+        getPoint(playerCurrent, "bottom-center")[1] 
+      );
+      clearCanvas(0, 0, canvasMainWidth, canvasMainHeight);
       //clearCanvasData();
       drawEnviroment(playerCurrent, "below");
       drawPlayersOther(playersInZone, playerCurrent, "below");
@@ -682,7 +724,18 @@ if (Meteor.isServer) {
           x: 0,
           y: 0,
           z: 0
-
+        },
+        hitbox: {
+          collision: {
+            pos: {
+              x: 0,
+              y: 0
+            },
+            size: {
+              x: 64,
+              y: 64
+            }
+          }
         },
         sprite: {
           name: "imageMainPlayer",
