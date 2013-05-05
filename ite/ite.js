@@ -1,7 +1,3 @@
-// Shared Databases
-Players = new Meteor.Collection("Players");
-Zones = new Meteor.Collection("Zones");
-
 // ITE Copyright 2013 by Aria Bennett
 // All rights reserved.
 //
@@ -21,6 +17,31 @@ Zones = new Meteor.Collection("Zones");
 //
 // -Aria Bennett
 
+// Shared Databases
+Players = new Meteor.Collection("Players");
+Zones = new Meteor.Collection("Zones");
+
+// Shared Methods
+Meteor.methods({
+  incrementPlayerPosition: function (id, x, y, facing) {
+    player = Players.findOne({_id: id});
+    zone = Zones.findOne({name: "player.zone.name"});
+    oldX = player.pos.x;
+    oldY = player.pos.y;
+    // Exceptions first, else do incriment.
+    if (oldX + x < 0) {
+      x = 0;
+    }
+    if (oldY + y < 0) {
+      y = 0;
+    }
+    Players.update(id, {$inc: {"pos.x": x}});
+    Players.update(id, {$inc: {"pos.y": y}});
+    Players.update(id, {$set: {"animation.facing": facing}});
+  }
+});
+
+
 // Client
 if (Meteor.isClient) {
 
@@ -29,14 +50,6 @@ if (Meteor.isClient) {
     passwordSignupFields: 'USERNAME_ONLY'
   });
 
-  Meteor.methods({
-    // Client Meteor.methods stubs
-    incrementPlayerPosition: function (id, x, y) {
-      Players.update(id, {$inc: {"pos.x": x}});
-      Players.update(id, {$inc: {"pos.y": y}});
-    },
-  });
-  
   function prewarm () {
     // Setup defaults for certain Session Variables
     Session.set("playerNamesEnabled", "1");
@@ -44,8 +57,8 @@ if (Meteor.isClient) {
       if (Meteor.user()) {
         if (getPlayer = Players.findOne({"name.first": Meteor.user().username})) {
           playerCurrent_id = getPlayer._id;
-          me = getPlayer;
-          zone = Zones.findOne({name: me.zone.name});
+          playerCurrent = getPlayer;
+          playerCurrentZone = Zones.findOne({name: playerCurrent.zone.name});
           playersInZone = Players.find({"zone.name": getPlayer.zone.name, "online": "true"},
             {sort: {"pos.y": 1}}, {sort: {"pos.z": 1}}).fetch();
         }
@@ -115,6 +128,8 @@ if (Meteor.isClient) {
     canvasMainResourcesPreload();
     sliceX = 0;
     sliceY = 0;
+    canvasMainWidth = 1024;
+    canvasMainHeight = 896;
 
   }
 
@@ -124,7 +139,7 @@ if (Meteor.isClient) {
 
       function clearCanvas () {
         // Clear Canvas
-        ctxMain.clearRect (0, 0, 1024, 896);
+        ctxMain.clearRect (0, 0, canvasMainWidth, canvasMainHeight);
       }
 
       function clearCanvasEntire (ctx) {
@@ -141,14 +156,8 @@ if (Meteor.isClient) {
 
           function drawImageAtRelationalObject (image) {
             ctxMain.drawImage(image, 
-              Math.max(
-                Math.min(-relationalObject.pos.x, 0), 
-                -image.width + 1024
-              ),
-              Math.max(
-                Math.min(-relationalObject.pos.y, 0), 
-                -image.height + 896
-              ),
+              -(relationalObject.pos.x),
+              -(relationalObject.pos.y),
               image.width,
               image.height);
           }
@@ -184,11 +193,11 @@ if (Meteor.isClient) {
               var playerSliceX = 0;
               var playerSliceY = 0;
               var relativeX = player.pos.x - relationalObject.pos.x 
-                + Math.min(512 - player.sprite.size.display.x/2, 
-                (512 - player.sprite.size.display.x/2 + relationalObject.pos.x));
+                + Math.min(canvasMainWidth/2 - player.sprite.size.display.x/2, 
+                (canvasMainWidth/2 - player.sprite.size.display.x/2 + relationalObject.pos.x));
               var relativeY = player.pos.y - relationalObject.pos.y 
-                + Math.min(448 - player.sprite.size.display.y/2, 
-                (448 - player.sprite.size.display.y/2 + relationalObject.pos.y));
+                + Math.min(canvasMainHeight/2 - player.sprite.size.display.y/2, 
+                (canvasMainHeight/2 - player.sprite.size.display.y/2 + relationalObject.pos.y));
 
               if (player.animation.facing === "left") {
                 playerSliceX = player.sprite.slice.left.x;
@@ -228,11 +237,11 @@ if (Meteor.isClient) {
               var playerSliceX = 0;
               var playerSliceY = 0;
               var relativeX = player.pos.x - relationalObject.pos.x 
-                + Math.min(512 - player.sprite.size.display.x/2, 
-                (512 - player.sprite.size.display.x/2 + relationalObject.pos.x));
+                + Math.min(canvasMainWidth/2 - player.sprite.size.display.x/2, 
+                (canvasMainWidth/2 - player.sprite.size.display.x/2 + relationalObject.pos.x));
               var relativeY = player.pos.y - relationalObject.pos.y 
-                + Math.min(448 - player.sprite.size.display.y/2, 
-                (448 - player.sprite.size.display.y/2 + relationalObject.pos.y));
+                + Math.min(canvasMainHeight/2 - player.sprite.size.display.y/2, 
+                (canvasMainHeight/2 - player.sprite.size.display.y/2 + relationalObject.pos.y));
 
               if (player.animation.facing === "left") {
                 playerSliceX = player.sprite.slice.left.x;
@@ -290,7 +299,7 @@ if (Meteor.isClient) {
               ctxMain.drawImage(window[player.sprite.name], 
                 playerSliceX, playerSliceY, 
                 player.sprite.size.source.x, player.sprite.size.source.y,
-                player.pos.x - relationalObject.pos.x + Math.min(448, (448 + relationalObject.pos.x)), 
+                player.pos.x - relationalObject.pos.x + Math.min(canvasMainHeight/2, (canvasMainHeight/2 + relationalObject.pos.x)), 
                 // 128 x 192
                 player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
                 player.sprite.size.display.x, player.sprite.size.display.y);
@@ -305,6 +314,128 @@ if (Meteor.isClient) {
         ctxMain.fillRect(draw[0], draw[1], draw[2], draw[3]);
       }
 
+      function getPoint(target, point) {
+        // Returns either: a single array
+        // containing specified point; OR if "all" is passed in
+        // point then an array of nine arrays. 
+        // each array contains [x,y] coordinates
+        // which represent various points of the object.
+        //
+        //                  format
+        // [ 
+        // [x,y] [x,y] [x,y]  |    top-left,    top-center,    top-right
+        // [x,y] [x,y] [x,y]  | center-left, center-center, center-right
+        // [x,y] [x,y] [x,y]  | bottom-left, bottom-center, bottom-right
+        // ]                  | ________________________________________
+        //                    |              [0], [1], [2],
+        //                    |              [3], [4], [5],
+        //                    |              [6], [7], [8]
+        
+        // Single pair requests
+        if (point === "top-left") {
+          return [target.pos.x, target.pos.y];
+        }
+        else if (point === "top-center") {
+          return [(target.pos.x - target.sprite.size.display.x/2), target.pos.y];
+        }
+        else if (point === "top-right") {
+          return [(target.pos.x - target.sprite.size.display.x), target.pos.y];
+        }
+        else if (point === "center-left") {
+          return [target.pos.x, (target.pos.y - target.sprite.size.display.y/2)];
+        }
+        else if (point === "center-center") {
+          return [(target.pos.x - target.sprite.size.display.x/2), (target.pos.y - target.sprite.size.display.y/2)];
+        }
+        else if (point === "center-right") {
+          return [(target.pos.x - target.sprite.size.display.x), (target.pos.y - target.sprite.size.display.y/2)];
+        }
+        else if (point === "bottom-left") {
+          return [target.pos.x, (target.pos.y - target.sprite.size.display.y)];
+        }
+        else if (point === "bottom-center") {
+          return [(target.pos.x - target.sprite.size.display.x/2), (target.pos.y - target.sprite.size.display.y)];
+        }
+        else if (point === "bottom-right") {
+          return [(target.pos.x - target.sprite.size.display.x), (target.pos.y - target.sprite.size.display.y)];
+        }
+
+        // Full set request
+        else if (point === "all") {
+          return [
+            [target.pos.x, target.pos.y],
+            [(target.pos.x - target.sprite.size.display.x/2), target.pos.y],
+            [(target.pos.x - target.sprite.size.display.x), target.pos.y],
+            [target.pos.x, (target.pos.y - target.sprite.size.display.y/2)],
+            [(target.pos.x - target.sprite.size.display.x/2), (target.pos.y - target.sprite.size.display.y/2)],
+            [(target.pos.x - target.sprite.size.display.x), (target.pos.y - target.sprite.size.display.y/2)],
+            [target.pos.x, (target.pos.y - target.sprite.size.display.y)],
+            [(target.pos.x - target.sprite.size.display.x/2), (target.pos.y - target.sprite.size.display.y)],
+            [(target.pos.x - target.sprite.size.display.x), (target.pos.y - target.sprite.size.display.y)]
+          ];
+        }
+        // Fallthrough error
+        else {
+          console.log("Error in function getPoint, invalid point specified");
+        }
+      }
+
+      function getPointDifference(target, point) {
+        // Works the same as getPoint, except returns
+        // the difference between the origin point and 
+        // the desired point
+        
+        // Single pair requests
+        if (point === "top-left") {
+          return [0, 0];
+        }
+        else if (point === "top-center") {
+          return [-target.sprite.size.display.x/2, 0];
+        }
+        else if (point === "top-right") {
+          return [-target.sprite.size.display.x, 0];
+        }
+        else if (point === "center-left") {
+          return [0, -target.sprite.size.display.y/2];
+        }
+        else if (point === "center-center") {
+          return [-target.sprite.size.display.x/2, -target.sprite.size.display.y/2];
+        }
+        else if (point === "center-right") {
+          return [-target.sprite.size.display.x, -target.sprite.size.display.y/2];
+        }
+        else if (point === "bottom-left") {
+          return [0, -target.sprite.size.display.y];
+        }
+        else if (point === "bottom-center") {
+          return [-target.sprite.size.display.x/2, -target.sprite.size.display.y];
+        }
+        else if (point === "bottom-right") {
+          return [-target.sprite.size.display.x, -target.sprite.size.display.y];
+        }
+
+        // Full set request
+        else if (point === "all") {
+          return [
+            [0, 0],
+            [-target.sprite.size.display.x/2, 0],
+            [-target.sprite.size.display.x, 0],
+            [0, -target.sprite.size.display.y/2],
+            [-target.sprite.size.display.x/2, -target.sprite.size.display.y/2],
+            [-target.sprite.size.display.x, -target.sprite.size.display.y/2],
+            [0, -target.sprite.size.display.y],
+            [-target.sprite.size.display.x/2, -target.sprite.size.display.y],
+            [-target.sprite.size.display.x, -target.sprite.size.display.y]
+          ];
+        }
+        // Fallthrough error
+        else {
+          console.log("Error in function getPointDifference, invalid point specified");
+        }
+
+
+      }
+
       function drawPlayer(player) {
         // Draws a single player, currently designed only
         // to be used on the current player.
@@ -316,7 +447,7 @@ if (Meteor.isClient) {
         }
         else if (Session.equals("keyArrowUp", "down")) {
           sliceX = player.sprite.slice.up.x;
-          sliceY = player.sprite.slice.up.y;
+         sliceY = player.sprite.slice.up.y;
         }
         else if (Session.equals("keyArrowRight", "down")) {
           sliceX = player.sprite.slice.right.x;
@@ -326,32 +457,26 @@ if (Meteor.isClient) {
           sliceX = player.sprite.slice.down.x;
           sliceY = player.sprite.slice.down.y;
         }
-        
-
-        // Draw current player 448, 352
-        // 128 x 192
+        // Draw current player, and center camera on them.
         ctxMain.drawImage(window[player.sprite.name], 
           sliceX, sliceY, 
           player.sprite.size.source.x, player.sprite.size.source.y,
           Math.min(
-            Math.max(
-              512 - (player.sprite.size.display.x/2), 
-              512 - (player.sprite.size.display.x/2) 
-            ),
-            (512 - (player.sprite.size.display.x/2) + player.pos.x)
-          ), 
+            getPoint(player, "bottom-center")[0],
+            canvasMainWidth/2 + getPointDifference(player, "center-center")[0]
+          ),
           Math.min(
-            448 - (player.sprite.size.display.y/2), 
-            (448 - (player.sprite.size.display.y/2) + player.pos.y)
-          ), 
+            getPoint(player, "bottom-center")[1],
+            canvasMainHeight/2 + getPointDifference(player, "center-center")[1]
+          ),
           player.sprite.size.display.x, player.sprite.size.display.y);
         drawName(
           player,
-          [Math.min(512, 
-            (512 + player.pos.x)), 
-            Math.min(448 - 10 - (player.sprite.size.display.y/2), 
-            (448 - (player.sprite.size.display.y/2) + player.pos.y))]
-        )
+          [Math.min(canvasMainWidth/2, 
+            (canvasMainWidth/2 + player.pos.x)), 
+            Math.min(canvasMainHeight/2 - 10 - (player.sprite.size.display.y/2), 
+            (canvasMainHeight/2 - (player.sprite.size.display.y/2) + player.pos.y))]
+        );
       }
 
       function drawName(player, position, enabled) {
@@ -376,25 +501,25 @@ if (Meteor.isClient) {
       // go below here.
       clearCanvas();
       //clearCanvasData();
-      drawEnviroment(me, "below");
-      drawPlayersOther(playersInZone, me, "below");
-      drawPlayer(me);
-      drawPlayersOther(playersInZone, me, "above");
-      drawEnviroment(me, "above");
+      drawEnviroment(playerCurrent, "below");
+      drawPlayersOther(playersInZone, playerCurrent, "below");
+      drawPlayer(playerCurrent);
+      drawPlayersOther(playersInZone, playerCurrent, "above");
+     // drawEnviroment(playerCurrent, "above");
     }
   }
   
   function canvasMainDrawLoop () {
     (function animloop(){
       if (!canvasDataLoaded && canvasDataBelow.getContext && playerCurrent_id) {
-          canvasDataBelow.width = window[zone.layers.below[0]].width;
-          canvasDataBelow.height = window[zone.layers.below[0]].height;
-        _.each(zone.layers.below, function (layer) {
+          canvasDataBelow.width = window[playerCurrentZone.layers.below[0]].width;
+          canvasDataBelow.height = window[playerCurrentZone.layers.below[0]].height;
+        _.each(playerCurrentZone.layers.below, function (layer) {
           ctxDataBelow.drawImage(window[layer], 0, 0);
         });
-          canvasDataAbove.width = window[zone.layers.above[0]].width;
-          canvasDataAbove.height = window[zone.layers.above[0]].height;
-        _.each(zone.layers.above, function (layer) {
+          canvasDataAbove.width = window[playerCurrentZone.layers.above[0]].width;
+          canvasDataAbove.height = window[playerCurrentZone.layers.above[0]].height;
+        _.each(playerCurrentZone.layers.above, function (layer) {
           ctxDataAbove.drawImage(window[layer], 0, 0);
         });
         canvasDataLoaded = 1;
@@ -513,11 +638,11 @@ if (Meteor.isClient) {
     window.setInterval(function () {
       if (playerCurrent_id) {
         console.log("Time to complete: " + (Date.now() - beforeTime) + 
-          "   x distance changed: " + (me.pos.x - beforeX) +
+          "   x distance changed: " + (playerCurrent.pos.x - beforeX) +
           "   Average x speed: " + 
-          ((Date.now() - beforeTime)/(me.pos.x - beforeX)));
+          ((Date.now() - beforeTime)/(playerCurrent.pos.x - beforeX)));
         beforeTime = Date.now();
-        beforeX = me.pos.x;
+        beforeX = playerCurrent.pos.x;
       }
     }, 1000);
   }
@@ -557,6 +682,7 @@ if (Meteor.isServer) {
           x: 0,
           y: 0,
           z: 0
+
         },
         sprite: {
           name: "imageMainPlayer",
@@ -568,6 +694,14 @@ if (Meteor.isServer) {
             display: {
               x: 128,
               y: 128
+            }
+          },
+          point: {
+            bottom: {
+              center: {
+                x: 64,
+                y: 128
+              }
             }
           },
           slice: {
@@ -635,11 +769,6 @@ if (Meteor.isServer) {
       });                              
     },
 
-    incrementPlayerPosition: function (id, x, y, facing) {
-      Players.update(id, {$inc: {"pos.x": x}});
-      Players.update(id, {$inc: {"pos.y": y}});
-      Players.update(id, {$set: {"animation.facing": facing}});
-    },
 
     changePlayerSprite: function (id, name, sizeSource, sizeDisplay, slice) {
       Players.update(id, {$set: { 
