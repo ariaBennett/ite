@@ -151,85 +151,276 @@ if (Meteor.isClient) {
     sliceY = 0;
     canvasMainWidth = 1024;
     canvasMainHeight = 896;
-    focalPointX = 400;
-    focalPointY = 400;
+    offsetX = 0;
+    offsetY = 0;
   }
 
   function drawCanvasMain () {
     // Draw updates to the main game canvas
     if (canvasMain.getContext && playerCurrent_id) {
 
+      /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
+      /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
+      /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
+
+      clearCanvas(0, 0, canvasMainWidth, canvasMainHeight);
+      // clearCanvasData();
+      drawEnviroment(getPoint(playerCurrent, "top-left"), "below");
+      drawPlayersOther(playersInZone, convertToRelativePoint(getPoint(playerCurrent, "top-left")), "below");
+      drawFocus(playerCurrent);
+      drawPlayersOther(playersInZone, convertToRelativePoint(getPoint(playerCurrent, "top-left")), "above");
+      // drawEnviroment(playerCurrent, "above");
+
+
+      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
+      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
+      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
+
+      function convertToRelativePoint(point) {
+        return [point[0] - getFocusX(point[0]), point[1] - getFocusY(point[1])];
+      }
+      function getPoint(target, point) {
+        // Returns either: a single array
+        // containing specified point; OR if "all" is passed in
+        // point then an array of nine arrays. 
+        // each array contains [x,y] coordinates
+        // which represent various points of the object.
+        //
+        //                  format
+        // [ 
+        // [x,y] [x,y] [x,y]  |    top-left,    top-center,    top-right
+        // [x,y] [x,y] [x,y]  | center-left, center-center, center-right
+        // [x,y] [x,y] [x,y]  | bottom-left, bottom-center, bottom-right
+        // ]                  | ________________________________________
+        //                    |              [0], [1], [2],
+        //                    |              [3], [4], [5],
+        //                    |              [6], [7], [8]
+        
+        // Single pair requests
+        if (point === "top-left") {
+          return [target.pos.x, target.pos.y];
+        }
+        else if (point === "top-center") {
+          return [(target.pos.x + target.sprite.size.display.x/2), target.pos.y];
+        }
+        else if (point === "top-right") {
+          return [(target.pos.x + target.sprite.size.display.x), target.pos.y];
+        }
+        else if (point === "center-left") {
+          return [target.pos.x, (target.pos.y + target.sprite.size.display.y/2)];
+        }
+        else if (point === "center-center") {
+          return [(target.pos.x + target.sprite.size.display.x/2), (target.pos.y + target.sprite.size.display.y/2)];
+        }
+        else if (point === "center-right") {
+          return [(target.pos.x + target.sprite.size.display.x), (target.pos.y + target.sprite.size.display.y/2)];
+        }
+        else if (point === "bottom-left") {
+          return [target.pos.x, (target.pos.y + target.sprite.size.display.y)];
+        }
+        else if (point === "bottom-center") {
+          console.log((target.pos.x + target.sprite.size.display.x/2), (target.pos.y + target.sprite.size.display.y));
+          return [(target.pos.x + target.sprite.size.display.x/2), (target.pos.y + target.sprite.size.display.y)];
+        }
+        else if (point === "bottom-right") {
+          return [(target.pos.x + target.sprite.size.display.x), (target.pos.y + target.sprite.size.display.y)];
+        }
+
+        // Full set request
+        else if (point === "all") {
+          return [
+            [target.pos.x, target.pos.y],
+            [(target.pos.x + target.sprite.size.display.x/2), target.pos.y],
+            [(target.pos.x + target.sprite.size.display.x), target.pos.y],
+            [target.pos.x, (target.pos.y + target.sprite.size.display.y/2)],
+            [(target.pos.x + target.sprite.size.display.x/2), (target.pos.y + target.sprite.size.display.y/2)],
+            [(target.pos.x + target.sprite.size.display.x), (target.pos.y + target.sprite.size.display.y/2)],
+            [target.pos.x, (target.pos.y + target.sprite.size.display.y)],
+            [(target.pos.x + target.sprite.size.display.x/2), (target.pos.y + target.sprite.size.display.y)],
+            [(target.pos.x + target.sprite.size.display.x), (target.pos.y + target.sprite.size.display.y)]
+          ];
+        }
+        // Fallthrough error
+        else {
+          console.log("Error in function getPoint, invalid point specified");
+        }
+      }
+      function getPointDifference(target, point) {
+        // Works the same as getPoint, except returns
+        // the difference between the origin point and 
+        // the desired point
+        
+        // Single pair requests
+        if (point === "top-left") {
+          return [0, 0];
+        }
+        else if (point === "top-center") {
+          return [target.sprite.size.display.x/2, 0];
+        }
+        else if (point === "top-right") {
+          return [target.sprite.size.display.x, 0];
+        }
+        else if (point === "center-left") {
+          return [0, target.sprite.size.display.y/2];
+        }
+        else if (point === "center-center") {
+          return [target.sprite.size.display.x/2, target.sprite.size.display.y/2];
+        }
+        else if (point === "center-right") {
+          return [target.sprite.size.display.x, target.sprite.size.display.y/2];
+        }
+        else if (point === "bottom-left") {
+          return [0, target.sprite.size.display.y];
+        }
+        else if (point === "bottom-center") {
+          return [target.sprite.size.display.x/2, target.sprite.size.display.y];
+        }
+        else if (point === "bottom-right") {
+          return [target.sprite.size.display.x, target.sprite.size.display.y];
+        }
+
+        // Full set request
+        else if (point === "all") {
+          return [
+            [0, 0],
+            [target.sprite.size.display.x/2, 0],
+            [target.sprite.size.display.x, 0],
+            [0, target.sprite.size.display.y/2],
+            [target.sprite.size.display.x/2, target.sprite.size.display.y/2],
+            [target.sprite.size.display.x, target.sprite.size.display.y/2],
+            [0, target.sprite.size.display.y],
+            [target.sprite.size.display.x/2, target.sprite.size.display.y],
+            [target.sprite.size.display.x, target.sprite.size.display.y]
+          ];
+        }
+        // Fallthrough error
+        else {
+          console.log("Error in function getPointDifference, invalid point specified");
+        }
+      }
       function clearCanvas (posX, posY, sizeX, sizeY) {
         // Clear Canvas
         ctxMain.clearRect (posX, posY, sizeX, sizeY);
       }
-
       function clearCanvasEntire (ctx) {
+        // Clear canvas via canvas size
         ctx.clearRect(0, 0, ctx.width, ctx.height);
       }
-
-      function updateFocalPoints(x, y) {
-        focalPointX = Math.min(x, 512);
-        focalPointY = Math.min(y, 448);
-      }
-
-      function drawEnviroment (relationalObject, relation) {
-        // relationalObject should be the player,
-        // relation should be either above, below,
-        // or both.
-
-        
-        if (playerCurrent_id) {
-
-          function drawImageAtRelationalObject (image) {
-            ctxMain.drawImage(image, 
-              relationalObject.pos.x,
-              relationalObject.pos.y,
-              canvasMainWidth,
-              canvasMainHeight,
-              0,
-              0,
-              canvasMainWidth,
-              canvasMainHeight);
-          }
-
-          if (relation === "below") {
-            drawImageAtRelationalObject(canvasDataBelow);
-          }
-          else if (relation === "above") {
-            drawImageAtRelationalObject(canvasDataAbove);
-          }
+      function getFocusX (x) {
+        if (x <= 0) {
+          return x;
+        }
+        else if (x > 0 &&
+          x < canvasMainWidth/2) {
+            return x;
+        }
+        else if (x >= canvasMainWidth/2 &&
+          x < playerCurrentZone.width - canvasMainWidth/2) {
+          return canvasMainWidth/2;
+        }
+        else if (x > playerCurrentZone.width - canvasMainWidth/2 && 
+          x < playerCurrentZone.width) {
+          return playerCurrentZone.width - x;
+        }
+        else if (x >= playerCurrentZone.width) {
+          return x; 
         }
       }
+      function getFocusY (y) {
+        if (y <= 0) {
+          return y;
+        }
+        else if (y > 0 &&
+          y < canvasMainHeight/2) {
+            return y;
+        }
+        else if (y >= canvasMainHeight/2 &&
+          y < playerCurrentZone.height - canvasMainHeight/2) {
+          return canvasMainHeight/2;
+        }
+        else if (y > playerCurrentZone.height - canvasMainHeight/2 && 
+          y < playerCurrentZone.height) {
+          return playerCurrentZone.height - y;
+        }
+        else if (y >= playerCurrentZone.height) {
+          return y; 
+        }
+      }
+      function drawFocus(player) {
+        // Draws a single player, currently designed only
+        // to be used on the current player.
 
-      function drawPlayersOther(players, relationalObject, relation) {
+        // Temporary player facing animation
+        if (Session.equals("keyArrowLeft", "down")) {
+          sliceX = player.sprite.slice.left.x;
+          sliceY = player.sprite.slice.left.y;
+        }
+        else if (Session.equals("keyArrowUp", "down")) {
+          sliceX = player.sprite.slice.up.x;
+          sliceY = player.sprite.slice.up.y;
+        }
+        else if (Session.equals("keyArrowRight", "down")) {
+          sliceX = player.sprite.slice.right.x;
+          sliceY = player.sprite.slice.right.y;
+        }
+        else if (Session.equals("keyArrowDown", "down")) {
+          sliceX = player.sprite.slice.down.x;
+          sliceY = player.sprite.slice.down.y;
+        }
+        function centerWidth (target) {
+          return getPoint(target, "top-left")[0];
+        }
+        function centerHeight (target) {
+          return getPoint(target, "top-left")[1];
+        }
+        // Draw current player, and center camera on them.
+        ctxMain.drawImage(window[player.sprite.name], 
+          sliceX, sliceY, 
+          player.sprite.size.source.x, player.sprite.size.source.y,
+          getFocusX(getPoint(player, "top-left")[0]),
+          getFocusY(getPoint(player, "top-left")[1]),
+          player.sprite.size.display.x, player.sprite.size.display.y);
+        drawName(
+          player,
+          [
+          getFocusX(getPoint(player, "top-center")[0]),
+          getFocusY(getPoint(player, "top-center")[1])
+          ]
+        );
+        drawTestSquare(
+          [255,0,0,1], 
+          player.hitbox.collision.pos.x, 
+          player.hitbox.collision.pos.y, 
+          player.hitbox.collision.size.x,
+          player.hitbox.collision.size.y
+        );
+      }
+      function drawPlayersOther(players, relationalPoint, relation) {
         // Draws player characters who are >not< the main
         // player.
         // 
         // players should be a list of documents sorted by
         // their Y and Z coordinates.
         // 
-        // relationalObject is intended to be the main player,
+        // relationalPoint is intended to be the main player,
         // relation should be either "below", "above", or "both",
         // and will determine which players are drawn.
         // 
         // NOTE: Do not use "both" unless the layered position of the
-        // relationalObject is unimportant!  
-        
+        // relationalPoint is unimportant!  
+        x = relationalPoint[0];
+        y = relationalPoint[1];
+
         if (relation === "below") {
           _.each(players, function (player) {
             if (playerCurrent_id !== player._id && 
-                player.pos.y <= relationalObject.pos.y) {
+                player.pos.y <= y) {
               // Temporary player animation
               var playerSliceX = 0;
               var playerSliceY = 0;
-              var relativeX = player.pos.x - relationalObject.pos.x 
-                + Math.min(canvasMainWidth/2 - player.sprite.size.display.x/2, 
-                (canvasMainWidth/2 - player.sprite.size.display.x/2 + relationalObject.pos.x));
-              var relativeY = player.pos.y - relationalObject.pos.y 
-                + Math.min(canvasMainHeight/2 - player.sprite.size.display.y/2, 
-                (canvasMainHeight/2 - player.sprite.size.display.y/2 + relationalObject.pos.y));
-
+              var relativeX = player.pos.x - x;
+              var relativeY = player.pos.y - y;
+              
               if (player.animation.facing === "left") {
                 playerSliceX = player.sprite.slice.left.x;
                 playerSliceY = player.sprite.slice.left.y;
@@ -263,16 +454,12 @@ if (Meteor.isClient) {
         else if (relation === "above") {
           _.each(players, function (player) {
             if (playerCurrent_id !== player._id && 
-                player.pos.y > relationalObject.pos.y) {
+                player.pos.y > y) {
               // Temporary player animation
               var playerSliceX = 0;
               var playerSliceY = 0;
-              var relativeX = player.pos.x - relationalObject.pos.x 
-                + Math.min(canvasMainWidth/2 - player.sprite.size.display.x/2, 
-                (canvasMainWidth/2 - player.sprite.size.display.x/2 + relationalObject.pos.x));
-              var relativeY = player.pos.y - relationalObject.pos.y 
-                + Math.min(canvasMainHeight/2 - player.sprite.size.display.y/2, 
-                (canvasMainHeight/2 - player.sprite.size.display.y/2 + relationalObject.pos.y));
+              var relativeX = player.pos.x - x;
+              var relativeY = player.pos.y - y;
 
               if (player.animation.facing === "left") {
                 playerSliceX = player.sprite.slice.left.x;
@@ -330,193 +517,84 @@ if (Meteor.isClient) {
               ctxMain.drawImage(window[player.sprite.name], 
                 playerSliceX, playerSliceY, 
                 player.sprite.size.source.x, player.sprite.size.source.y,
-                player.pos.x - relationalObject.pos.x + Math.min(canvasMainHeight/2, (canvasMainHeight/2 + relationalObject.pos.x)), 
+                player.pos.x - x + Math.min(canvasMainHeight/2, (canvasMainHeight/2 + x)), 
                 // 128 x 192
-                player.pos.y - relationalObject.pos.y + Math.min(352, (352 + relationalObject.pos.y)),
+                player.pos.y - y + Math.min(352, (352 + y)),
                 player.sprite.size.display.x, player.sprite.size.display.y);
             }
           });
         }
       }
+      function drawEnviroment (pos, relation) {
+        // relationalPoint should be the player,
+        // relation should be either above, below,
+        // or both.
+        x = pos[0];
+        y = pos[1]
+        
+        if (playerCurrent_id) {
 
+          function getViewX (image) {
+            if (x <= 0)
+              return 0;
+            else if (x > 0 &&
+              x < canvasMainWidth/2) {
+                return 0;
+            }
+            else if (x >= canvasMainWidth/2 &&
+              x < playerCurrentZone.width) {
+              return x - canvasMainWidth/2;
+            }
+            else if (x > playerCurrentZone.width - canvasMainWidth/2 && 
+              x < playerCurrentZone.width) {
+              return x - canvasMainWidth/2;
+            }
+            else if (x >= playerCurrentZone.width) {
+              return playerCurrentZone.width; 
+            }
+          }
+
+          function getViewY (image) {
+            if (y <= 0)
+              return 0;
+            else if (y > 0 &&
+              y < canvasMainHeight/2) {
+                return 0;
+            }
+            else if (y >= canvasMainHeight/2 &&
+              y < playerCurrentZone.height) {
+              return y - canvasMainHeight/2;
+            }
+            else if (y > playerCurrentZone.height - canvasMainHeight/2 && 
+              y < playerCurrentZone.height) {
+              return y - canvasMainHeight/2;
+            }
+            else if (y >= playerCurrentZone.height) {
+              return playerCurrentZone.height; 
+            }
+          }
+
+          function drawImageAtRelationalPoint (image) {
+            ctxMain.drawImage(image, 
+              -getViewX(image),
+              -getViewY(image),
+              playerCurrentZone.width,
+              playerCurrentZone.height);
+          }
+
+          if (relation === "below") {
+            drawImageAtRelationalPoint(canvasDataBelow);
+          }
+          else if (relation === "above") {
+            drawImageAtRelationalPoint(canvasDataAbove);
+          }
+        }
+      }
       function drawTestSquare(style, aX, aY, bX, bY) {
         ctxMain.fillStyle = "rgba(" + style[0] + "," + style[1] 
           + "," + style[2] + "," + style[3] + ")";
         ctxMain.fillRect(aX, aY, bX, bY);
       }
-
-      function getPoint(target, point) {
-        // Returns either: a single array
-        // containing specified point; OR if "all" is passed in
-        // point then an array of nine arrays. 
-        // each array contains [x,y] coordinates
-        // which represent various points of the object.
-        //
-        //                  format
-        // [ 
-        // [x,y] [x,y] [x,y]  |    top-left,    top-center,    top-right
-        // [x,y] [x,y] [x,y]  | center-left, center-center, center-right
-        // [x,y] [x,y] [x,y]  | bottom-left, bottom-center, bottom-right
-        // ]                  | ________________________________________
-        //                    |              [0], [1], [2],
-        //                    |              [3], [4], [5],
-        //                    |              [6], [7], [8]
-        
-        // Single pair requests
-        if (point === "top-left") {
-          return [target.pos.x, target.pos.y];
-        }
-        else if (point === "top-center") {
-          return [(target.pos.x - target.sprite.size.display.x/2), target.pos.y];
-        }
-        else if (point === "top-right") {
-          return [(target.pos.x - target.sprite.size.display.x), target.pos.y];
-        }
-        else if (point === "center-left") {
-          return [target.pos.x, (target.pos.y - target.sprite.size.display.y/2)];
-        }
-        else if (point === "center-center") {
-          return [(target.pos.x - target.sprite.size.display.x/2), (target.pos.y - target.sprite.size.display.y/2)];
-        }
-        else if (point === "center-right") {
-          return [(target.pos.x - target.sprite.size.display.x), (target.pos.y - target.sprite.size.display.y/2)];
-        }
-        else if (point === "bottom-left") {
-          return [target.pos.x, (target.pos.y - target.sprite.size.display.y)];
-        }
-        else if (point === "bottom-center") {
-          return [(target.pos.x - target.sprite.size.display.x/2), (target.pos.y - target.sprite.size.display.y)];
-        }
-        else if (point === "bottom-right") {
-          return [(target.pos.x - target.sprite.size.display.x), (target.pos.y - target.sprite.size.display.y)];
-        }
-
-        // Full set request
-        else if (point === "all") {
-          return [
-            [target.pos.x, target.pos.y],
-            [(target.pos.x - target.sprite.size.display.x/2), target.pos.y],
-            [(target.pos.x - target.sprite.size.display.x), target.pos.y],
-            [target.pos.x, (target.pos.y - target.sprite.size.display.y/2)],
-            [(target.pos.x - target.sprite.size.display.x/2), (target.pos.y - target.sprite.size.display.y/2)],
-            [(target.pos.x - target.sprite.size.display.x), (target.pos.y - target.sprite.size.display.y/2)],
-            [target.pos.x, (target.pos.y - target.sprite.size.display.y)],
-            [(target.pos.x - target.sprite.size.display.x/2), (target.pos.y - target.sprite.size.display.y)],
-            [(target.pos.x - target.sprite.size.display.x), (target.pos.y - target.sprite.size.display.y)]
-          ];
-        }
-        // Fallthrough error
-        else {
-          console.log("Error in function getPoint, invalid point specified");
-        }
-      }
-
-      function getPointDifference(target, point) {
-        // Works the same as getPoint, except returns
-        // the difference between the origin point and 
-        // the desired point
-        
-        // Single pair requests
-        if (point === "top-left") {
-          return [0, 0];
-        }
-        else if (point === "top-center") {
-          return [-target.sprite.size.display.x/2, 0];
-        }
-        else if (point === "top-right") {
-          return [-target.sprite.size.display.x, 0];
-        }
-        else if (point === "center-left") {
-          return [0, -target.sprite.size.display.y/2];
-        }
-        else if (point === "center-center") {
-          return [-target.sprite.size.display.x/2, -target.sprite.size.display.y/2];
-        }
-        else if (point === "center-right") {
-          return [-target.sprite.size.display.x, -target.sprite.size.display.y/2];
-        }
-        else if (point === "bottom-left") {
-          return [0, -target.sprite.size.display.y];
-        }
-        else if (point === "bottom-center") {
-          return [-target.sprite.size.display.x/2, -target.sprite.size.display.y];
-        }
-        else if (point === "bottom-right") {
-          return [-target.sprite.size.display.x, -target.sprite.size.display.y];
-        }
-
-        // Full set request
-        else if (point === "all") {
-          return [
-            [0, 0],
-            [-target.sprite.size.display.x/2, 0],
-            [-target.sprite.size.display.x, 0],
-            [0, -target.sprite.size.display.y/2],
-            [-target.sprite.size.display.x/2, -target.sprite.size.display.y/2],
-            [-target.sprite.size.display.x, -target.sprite.size.display.y/2],
-            [0, -target.sprite.size.display.y],
-            [-target.sprite.size.display.x/2, -target.sprite.size.display.y],
-            [-target.sprite.size.display.x, -target.sprite.size.display.y]
-          ];
-        }
-        // Fallthrough error
-        else {
-          console.log("Error in function getPointDifference, invalid point specified");
-        }
-
-
-      }
-
-      function drawPlayer(player) {
-        // Draws a single player, currently designed only
-        // to be used on the current player.
-
-        // Temporary player facing animation
-        if (Session.equals("keyArrowLeft", "down")) {
-          sliceX = player.sprite.slice.left.x;
-          sliceY = player.sprite.slice.left.y;
-        }
-        else if (Session.equals("keyArrowUp", "down")) {
-          sliceX = player.sprite.slice.up.x;
-         sliceY = player.sprite.slice.up.y;
-        }
-        else if (Session.equals("keyArrowRight", "down")) {
-          sliceX = player.sprite.slice.right.x;
-          sliceY = player.sprite.slice.right.y;
-        }
-        else if (Session.equals("keyArrowDown", "down")) {
-          sliceX = player.sprite.slice.down.x;
-          sliceY = player.sprite.slice.down.y;
-        }
-        function centerWidth (target) {
-          return getPoint(target, "bottom-center")[0];
-        }
-        function centerHeight (target) {
-          return getPoint(target, "bottom-center")[1];
-        }
-        // Draw current player, and center camera on them.
-        ctxMain.drawImage(window[player.sprite.name], 
-          sliceX, sliceY, 
-          player.sprite.size.source.x, player.sprite.size.source.y,
-          centerWidth(player),
-          centerHeight(player),
-          player.sprite.size.display.x, player.sprite.size.display.y);
-        drawName(
-          player,
-          [
-            centerWidth(player), 
-            centerHeight(player) 
-          ]
-        );
-        drawTestSquare(
-          [255,0,0,1], 
-          player.hitbox.collision.pos.x, 
-          player.hitbox.collision.pos.y, 
-          player.hitbox.collision.size.x,
-          player.hitbox.collision.size.y
-        );
-      }
-
       function drawName(player, position, enabled) {
         //               Parameter Guide
         //     (Type) |      (Name)      | (Description)
@@ -534,20 +612,6 @@ if (Meteor.isClient) {
           ctxMain.strokeText(player.name.first, position[0], position[1]);
         }
       }
-
-      // All code that actually draws on the canvas should
-      // go below here.
-      updateFocalPoints(
-        getPoint(playerCurrent, "bottom-center")[0], 
-        getPoint(playerCurrent, "bottom-center")[1] 
-      );
-      clearCanvas(0, 0, canvasMainWidth, canvasMainHeight);
-      //clearCanvasData();
-      drawEnviroment(playerCurrent, "below");
-      drawPlayersOther(playersInZone, playerCurrent, "below");
-      drawPlayer(playerCurrent);
-      drawPlayersOther(playersInZone, playerCurrent, "above");
-     // drawEnviroment(playerCurrent, "above");
     }
   }
   
@@ -885,6 +949,8 @@ if (Meteor.isServer) {
             "ct_cathedral_3_2"
           ]
         },
+        width: 2560,
+        height: 2368,
         players: {
           online: [],
           offline: []
