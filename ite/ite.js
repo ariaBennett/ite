@@ -30,12 +30,22 @@ Meteor.methods({
         hitbox: {
           collision: {
             pos: {
-              x: player.pos.x - 32,
-              y: player.pos.y - 64
+              x: player.pos.x + player.sprite.size.display.x/2 - player.hitbox.collision.size.x/2,
+              y: player.pos.y + player.sprite.size.display.y - player.hitbox.collision.size.y
             },
             size: {
               x: 64,
               y: 64
+            }
+          },
+          layering: {
+            pos: {
+              x: player.pos.x,
+              y: player.pos.y + player.sprite.size.display.y
+            },
+            size: {
+              x: player.sprite.size.display.x,
+              y: 1
             }
           }
         }
@@ -81,7 +91,7 @@ if (Meteor.isClient) {
           playerCurrent = getPlayer;
           playerCurrentZone = Zones.findOne({name: playerCurrent.zone.name});
           playersInZone = Players.find({"zone.name": getPlayer.zone.name, "online": "true"},
-            {sort: {"pos.y": 1}}, {sort: {"pos.z": 1}}).fetch();
+            {sort: {"hitbox.layering.pos.y": 1}}, {sort: {"pos.z": 1}}).fetch();
         }
       }
       if (!Meteor.user()) {
@@ -166,9 +176,9 @@ if (Meteor.isClient) {
       clearCanvas(0, 0, canvasMainWidth, canvasMainHeight);
       // clearCanvasData();
       drawEnviroment(getPoint(playerCurrent, "top-left"), "below");
-      drawPlayersOther(playersInZone, convertToRelativePoint(getPoint(playerCurrent, "top-left")), "below");
+      drawPlayersOther(playersInZone, convertToRelativePoint([player.hitbox.layering.pos.x, player.hitbox.layering.pos.y]), "below");
       drawFocus(playerCurrent);
-      drawPlayersOther(playersInZone, convertToRelativePoint(getPoint(playerCurrent, "top-left")), "above");
+      drawPlayersOther(playersInZone, convertToRelativePoint([player.hitbox.layering.pos.x, player.hitbox.layering.pos.y]), "above");
       // drawEnviroment(playerCurrent, "above");
 
 
@@ -387,12 +397,21 @@ if (Meteor.isClient) {
           getFocusY(getPoint(player, "top-center")[1])
           ]
         );
+        // Collision hitbox
         drawTestSquare(
           [255,0,0,1], 
           player.hitbox.collision.pos.x, 
           player.hitbox.collision.pos.y, 
           player.hitbox.collision.size.x,
           player.hitbox.collision.size.y
+        );
+        // Layering hitbox
+        drawTestSquare(
+          [0,255,0,1], 
+          player.hitbox.layering.pos.x, 
+          player.hitbox.layering.pos.y, 
+          player.hitbox.layering.size.x,
+          player.hitbox.layering.size.y
         );
       }
       function drawPlayersOther(players, relationalPoint, relation) {
@@ -414,7 +433,7 @@ if (Meteor.isClient) {
         if (relation === "below") {
           _.each(players, function (player) {
             if (playerCurrent_id !== player._id && 
-                player.pos.y <= y) {
+                player.hitbox.layering.pos.y <= y) {
               // Temporary player animation
               var playerSliceX = 0;
               var playerSliceY = 0;
@@ -454,7 +473,7 @@ if (Meteor.isClient) {
         else if (relation === "above") {
           _.each(players, function (player) {
             if (playerCurrent_id !== player._id && 
-                player.pos.y > y) {
+                player.hitbox.layering.pos.y > y) {
               // Temporary player animation
               var playerSliceX = 0;
               var playerSliceY = 0;
@@ -617,7 +636,8 @@ if (Meteor.isClient) {
   
   function canvasMainDrawLoop () {
     (function animloop(){
-      if (!canvasDataLoaded && canvasDataBelow.getContext && playerCurrent_id) {
+      if (!canvasDataLoaded && canvasDataBelow.getContext && canvasDataAbove.getContext && 
+          playerCurrent_id) {
           canvasDataBelow.width = window[playerCurrentZone.layers.below[0]].width;
           canvasDataBelow.height = window[playerCurrentZone.layers.below[0]].height;
         _.each(playerCurrentZone.layers.below, function (layer) {
@@ -631,7 +651,9 @@ if (Meteor.isClient) {
         canvasDataLoaded = 1;
       }
       requestAnimFrame(animloop);
-      drawCanvasMain();
+      if (canvasDataLoaded) {
+        drawCanvasMain();
+      }
     })();
   }
 
@@ -798,6 +820,16 @@ if (Meteor.isServer) {
             size: {
               x: 64,
               y: 64
+            }
+          },
+          layering: {
+            pos: {
+              x: 0,
+              y: 0
+            },
+            size: {
+              x: 1,
+              y: 1
             }
           }
         },
