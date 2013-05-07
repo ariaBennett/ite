@@ -321,16 +321,13 @@ if (Meteor.isClient) {
         if (x <= 0) {
           return x;
         }
-        else if (x > 0 &&
-          x < canvasMainWidth/2) {
-            return x;
+        else if (x < canvasMainWidth/2) {
+          return x;
         }
-        else if (x >= canvasMainWidth/2 &&
-          x < playerCurrentZone.width - canvasMainWidth/2) {
+        else if (x < playerCurrentZone.width - canvasMainWidth/2) {
           return canvasMainWidth/2;
         }
-        else if (x > playerCurrentZone.width - canvasMainWidth/2 && 
-          x < playerCurrentZone.width) {
+        else if (x < playerCurrentZone.width) {
           return playerCurrentZone.width - x;
         }
         else if (x >= playerCurrentZone.width) {
@@ -341,16 +338,13 @@ if (Meteor.isClient) {
         if (y <= 0) {
           return y;
         }
-        else if (y > 0 &&
-          y < canvasMainHeight/2) {
-            return y;
+        else if (y < canvasMainHeight/2) {
+          return y;
         }
-        else if (y >= canvasMainHeight/2 &&
-          y < playerCurrentZone.height - canvasMainHeight/2) {
+        else if (y < playerCurrentZone.height - canvasMainHeight/2) {
           return canvasMainHeight/2;
         }
-        else if (y > playerCurrentZone.height - canvasMainHeight/2 && 
-          y < playerCurrentZone.height) {
+        else if (y < playerCurrentZone.height) {
           return playerCurrentZone.height - y;
         }
         else if (y >= playerCurrentZone.height) {
@@ -551,40 +545,28 @@ if (Meteor.isClient) {
           function getViewX (image) {
             if (x <= 0)
               return 0;
-            else if (x > 0 &&
-              x < canvasMainWidth/2) {
+            else if (x < canvasMainWidth/2) {
                 return 0;
             }
-            else if (x >= canvasMainWidth/2 &&
-              x < playerCurrentZone.width) {
+            else if (x < playerCurrentZone.width - canvasMainWidth/2) {
               return x - canvasMainWidth/2;
             }
-            else if (x > playerCurrentZone.width - canvasMainWidth/2 && 
-              x < playerCurrentZone.width) {
-              return x - canvasMainWidth/2;
-            }
-            else if (x >= playerCurrentZone.width) {
-              return playerCurrentZone.width; 
+            else if (x >= playerCurrentZone.width - canvasMainWidth/2) {
+              return playerCurrentZone.width - canvasMainWidth; 
             }
           }
 
           function getViewY (image) {
             if (y <= 0)
               return 0;
-            else if (y > 0 &&
-              y < canvasMainHeight/2) {
+            else if (y < canvasMainHeight/2) {
                 return 0;
             }
-            else if (y >= canvasMainHeight/2 &&
-              y < playerCurrentZone.height) {
+            else if (y < playerCurrentZone.height - canvasMainHeight/2) {
               return y - canvasMainHeight/2;
             }
-            else if (y > playerCurrentZone.height - canvasMainHeight/2 && 
-              y < playerCurrentZone.height) {
-              return y - canvasMainHeight/2;
-            }
-            else if (y >= playerCurrentZone.height) {
-              return playerCurrentZone.height; 
+            else if (y >= playerCurrentZone.height - canvasMainHeight/2) {
+              return playerCurrentZone.height - canvasMainHeight; 
             }
           }
 
