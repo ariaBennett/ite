@@ -175,11 +175,11 @@ if (Meteor.isClient) {
 
       clearCanvas(0, 0, canvasMainWidth, canvasMainHeight);
       // clearCanvasData();
-      drawEnviroment(getPoint(playerCurrent, "top-left"), "below");
-      drawPlayersOther(playersInZone, convertToRelativePoint([player.hitbox.layering.pos.x, player.hitbox.layering.pos.y]), "below");
+      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "below");
+      drawPlayersOther(playersInZone, playerCurrent, "below");
       drawFocus(playerCurrent);
-      drawPlayersOther(playersInZone, convertToRelativePoint([player.hitbox.layering.pos.x, player.hitbox.layering.pos.y]), "above");
-      // drawEnviroment(playerCurrent, "above");
+      drawPlayersOther(playersInZone, playerCurrent, "above");
+      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
 
 
       /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
@@ -187,6 +187,7 @@ if (Meteor.isClient) {
       /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
 
       function convertToRelativePoint(point) {
+        // Converts a point to a point relative to the getFocusX
         return [point[0] - getFocusX(point[0]), point[1] - getFocusY(point[1])];
       }
       function getPoint(target, point) {
@@ -377,24 +378,18 @@ if (Meteor.isClient) {
           sliceX = player.sprite.slice.down.x;
           sliceY = player.sprite.slice.down.y;
         }
-        function centerWidth (target) {
-          return getPoint(target, "top-left")[0];
-        }
-        function centerHeight (target) {
-          return getPoint(target, "top-left")[1];
-        }
         // Draw current player, and center camera on them.
         ctxMain.drawImage(window[player.sprite.name], 
           sliceX, sliceY, 
           player.sprite.size.source.x, player.sprite.size.source.y,
-          getFocusX(getPoint(player, "top-left")[0]),
-          getFocusY(getPoint(player, "top-left")[1]),
+          getFocusX(player.pos.x),
+          getFocusY(player.pos.y),
           player.sprite.size.display.x, player.sprite.size.display.y);
         drawName(
           player,
           [
-          getFocusX(getPoint(player, "top-center")[0]),
-          getFocusY(getPoint(player, "top-center")[1])
+          getFocusX(player.pos.x) + player.sprite.size.display.x/2,
+          getFocusY(player.pos.y) - 10
           ]
         );
         // Collision hitbox
@@ -414,31 +409,31 @@ if (Meteor.isClient) {
           player.hitbox.layering.size.y
         );
       }
-      function drawPlayersOther(players, relationalPoint, relation) {
+      function drawPlayersOther(players, relationalObject, relation) {
         // Draws player characters who are >not< the main
         // player.
         // 
         // players should be a list of documents sorted by
         // their Y and Z coordinates.
         // 
-        // relationalPoint is intended to be the main player,
+        // relationalObject is intended to be the main player,
         // relation should be either "below", "above", or "both",
         // and will determine which players are drawn.
         // 
         // NOTE: Do not use "both" unless the layered position of the
-        // relationalPoint is unimportant!  
-        x = relationalPoint[0];
-        y = relationalPoint[1];
+        // relationalObject is unimportant!  
+        relationalPoint = convertToRelativePoint([relationalObject.pos.x, relationalObject.pos.y]); 
+        layeringPointY = relationalObject.hitbox.layering.pos.y;
 
         if (relation === "below") {
           _.each(players, function (player) {
             if (playerCurrent_id !== player._id && 
-                player.hitbox.layering.pos.y <= y) {
+                player.hitbox.layering.pos.y <= layeringPointY) {
               // Temporary player animation
               var playerSliceX = 0;
               var playerSliceY = 0;
-              var relativeX = player.pos.x - x;
-              var relativeY = player.pos.y - y;
+              var relativeX = player.pos.x - relationalPoint[0];
+              var relativeY = player.pos.y - relationalPoint[1];
               
               if (player.animation.facing === "left") {
                 playerSliceX = player.sprite.slice.left.x;
@@ -473,12 +468,12 @@ if (Meteor.isClient) {
         else if (relation === "above") {
           _.each(players, function (player) {
             if (playerCurrent_id !== player._id && 
-                player.hitbox.layering.pos.y > y) {
+                player.hitbox.layering.pos.y > relationalObject.hitbox.layering.pos.y) {
               // Temporary player animation
               var playerSliceX = 0;
               var playerSliceY = 0;
-              var relativeX = player.pos.x - x;
-              var relativeY = player.pos.y - y;
+              var relativeX = player.pos.x - relationalPoint[0];
+              var relativeY = player.pos.y - relationalPoint[1];
 
               if (player.animation.facing === "left") {
                 playerSliceX = player.sprite.slice.left.x;
@@ -536,20 +531,20 @@ if (Meteor.isClient) {
               ctxMain.drawImage(window[player.sprite.name], 
                 playerSliceX, playerSliceY, 
                 player.sprite.size.source.x, player.sprite.size.source.y,
-                player.pos.x - x + Math.min(canvasMainHeight/2, (canvasMainHeight/2 + x)), 
+                player.pos.x - relationalPoint[0] + Math.min(canvasMainHeight/2, (canvasMainHeight/2 + x)), 
                 // 128 x 192
-                player.pos.y - y + Math.min(352, (352 + y)),
+                player.pos.y - relationalPoint[1] + Math.min(352, (352 + relationalPoint[1])),
                 player.sprite.size.display.x, player.sprite.size.display.y);
             }
           });
         }
       }
-      function drawEnviroment (pos, relation) {
+      function drawEnviroment (posX, posY, relation) {
         // relationalPoint should be the player,
         // relation should be either above, below,
         // or both.
-        x = pos[0];
-        y = pos[1]
+        x = posX;
+        y = posY;
         
         if (playerCurrent_id) {
 
