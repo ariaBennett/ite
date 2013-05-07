@@ -47,6 +47,16 @@ Meteor.methods({
               x: player.sprite.size.display.x,
               y: 1
             }
+          },
+          focus: {
+            pos: {
+              x: player.pos.x + player.sprite.size.display.x/2,
+              y: player.pos.y + player.sprite.size.display.y - player.hitbox.collision.size.y/2
+            },
+            size: {
+              x: 1,
+              y: 1
+            }
           }
         }
       }});
@@ -56,8 +66,8 @@ Meteor.methods({
   incrementPlayerPosition: function (id, x, y, facing) {
     player = Players.findOne({_id: id});
     zone = Zones.findOne({name: "player.zone.name"});
-    oldX = player.pos.x;
-    oldY = player.pos.y;
+    oldX = player.hitbox.collision.pos.x;
+    oldY = player.hitbox.collision.pos.y;
     // Exceptions first, else do incriment.
     if (oldX + x < 0) {
       x = 0;
@@ -111,6 +121,7 @@ if (Meteor.isClient) {
     ct_cathedral_3_2 = new Image();
     ct_cathedral_3_3 = new Image();
     ct_cathedral_3_4 = new Image();
+    ct_cathedral_3_collision = new Image();
     /*
     imageBackground = new Image();
     imageCTCathedralAboveNoPass = new Image();
@@ -125,6 +136,7 @@ if (Meteor.isClient) {
     ct_cathedral_3_2.src = "assets/zones/ct_cathedral/64x64/rooms/3/2.png";
     ct_cathedral_3_3.src = "assets/zones/ct_cathedral/64x64/rooms/3/3.png";
     ct_cathedral_3_4.src = "assets/zones/ct_cathedral/64x64/rooms/3/4.png";
+    ct_cathedral_3_collision.src = "assets/zones/ct_cathedral/64x64/rooms/3/collision.png";
 
     
     imageMainPlayer.src = "assets/test/magus_sheet_movement_big.png";
@@ -151,9 +163,11 @@ if (Meteor.isClient) {
     canvasMain = document.getElementById("canvasMain");
     canvasDataAbove = document.getElementById("canvasDataAbove");
     canvasDataBelow = document.getElementById("canvasDataBelow");
+    canvasDataCollision = document.getElementById("canvasDataCollision");
     ctxMain = canvasMain.getContext("2d");
     ctxDataAbove = canvasDataAbove.getContext("2d");
     ctxDataBelow = canvasDataBelow.getContext("2d");
+    ctxDataCollision = canvasDataCollision.getContext("2d");
     canvasDataLoaded = 0;
     canvasMainResourcesDeclare();
     canvasMainResourcesPreload();
@@ -175,11 +189,12 @@ if (Meteor.isClient) {
 
       clearCanvas(0, 0, canvasMainWidth, canvasMainHeight);
       // clearCanvasData();
-      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "below");
+      //drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "below");
+      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "collision");
       drawPlayersOther(playersInZone, playerCurrent, "below");
       drawFocus(playerCurrent);
       drawPlayersOther(playersInZone, playerCurrent, "above");
-      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
+      //drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
 
 
       /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
@@ -327,11 +342,8 @@ if (Meteor.isClient) {
         else if (x < playerCurrentZone.width - canvasMainWidth/2) {
           return canvasMainWidth/2;
         }
-        else if (x < playerCurrentZone.width) {
-          return playerCurrentZone.width - x;
-        }
-        else if (x >= playerCurrentZone.width) {
-          return x; 
+        else if (x <= playerCurrentZone.width) {
+          return canvasMainWidth - (playerCurrentZone.width - x);
         }
       }
       function getFocusY (y) {
@@ -344,11 +356,8 @@ if (Meteor.isClient) {
         else if (y < playerCurrentZone.height - canvasMainHeight/2) {
           return canvasMainHeight/2;
         }
-        else if (y < playerCurrentZone.height) {
-          return playerCurrentZone.height - y;
-        }
-        else if (y >= playerCurrentZone.height) {
-          return y; 
+        else if (y <= playerCurrentZone.height) {
+          return canvasMainHeight - (playerCurrentZone.height - y);
         }
       }
       function drawFocus(player) {
@@ -389,18 +398,26 @@ if (Meteor.isClient) {
         // Collision hitbox
         drawTestSquare(
           [255,0,0,1], 
-          player.hitbox.collision.pos.x, 
-          player.hitbox.collision.pos.y, 
+          getFocusX(player.hitbox.collision.pos.x), 
+          getFocusY(player.hitbox.collision.pos.y), 
           player.hitbox.collision.size.x,
           player.hitbox.collision.size.y
         );
         // Layering hitbox
         drawTestSquare(
           [0,255,0,1], 
-          player.hitbox.layering.pos.x, 
-          player.hitbox.layering.pos.y, 
+          getFocusX(player.hitbox.layering.pos.x), 
+          getFocusY(player.hitbox.layering.pos.y), 
           player.hitbox.layering.size.x,
           player.hitbox.layering.size.y
+        );
+        // Focus hitbox
+        drawTestSquare(
+          [0,0,255,1], 
+          getFocusX(player.hitbox.focus.pos.x), 
+          getFocusY(player.hitbox.focus.pos.y), 
+          player.hitbox.focus.size.x,
+          player.hitbox.focus.size.y
         );
       }
       function drawPlayersOther(players, relationalObject, relation) {
@@ -584,6 +601,9 @@ if (Meteor.isClient) {
           else if (relation === "above") {
             drawImageAtRelationalPoint(canvasDataAbove);
           }
+          else if (relation === "collision") {
+            drawImageAtRelationalPoint(canvasDataCollision);
+          }
         }
       }
       function drawTestSquare(style, aX, aY, bX, bY) {
@@ -614,7 +634,7 @@ if (Meteor.isClient) {
   function canvasMainDrawLoop () {
     (function animloop(){
       if (!canvasDataLoaded && canvasDataBelow.getContext && canvasDataAbove.getContext && 
-          playerCurrent_id) {
+          canvasDataCollision.getContext && playerCurrent_id) {
           canvasDataBelow.width = window[playerCurrentZone.layers.below[0]].width;
           canvasDataBelow.height = window[playerCurrentZone.layers.below[0]].height;
         _.each(playerCurrentZone.layers.below, function (layer) {
@@ -625,6 +645,12 @@ if (Meteor.isClient) {
         _.each(playerCurrentZone.layers.above, function (layer) {
           ctxDataAbove.drawImage(window[layer], 0, 0);
         });
+          canvasDataCollision.width = window[playerCurrentZone.layers.collision[0]].width;
+          canvasDataCollision.height = window[playerCurrentZone.layers.collision[0]].height;
+        _.each(playerCurrentZone.layers.collision, function (layer) {
+          ctxDataCollision.drawImage(window[layer], 0, 0);
+        });
+
         canvasDataLoaded = 1;
       }
       requestAnimFrame(animloop);
@@ -808,6 +834,16 @@ if (Meteor.isServer) {
               x: 1,
               y: 1
             }
+          },
+          focus: {
+            pos: {
+              x: 0,
+              y: 0 
+            },
+            size: {
+              x: 1,
+              y: 1
+            }
           }
         },
         sprite: {
@@ -956,6 +992,9 @@ if (Meteor.isServer) {
           above: [
             "ct_cathedral_3_1",
             "ct_cathedral_3_2"
+          ],
+          collision: [
+            "ct_cathedral_3_collision"
           ]
         },
         width: 2560,

@@ -36,4 +36,6 @@ html, body {
 #canvasDataBelow {
   display: none;
 } 
-
+#canvasDataCollision {
+  display: none;
+} 
