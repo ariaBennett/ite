@@ -65,16 +65,22 @@ Meteor.methods({
 
   incrementPlayerPosition: function (id, x, y, facing) {
     player = Players.findOne({_id: id});
-    zone = Zones.findOne({name: "player.zone.name"});
-    oldX = player.hitbox.collision.pos.x;
-    oldY = player.hitbox.collision.pos.y;
+    zone = Zones.findOne({name: player.zone.name});
+    oldX1 = player.hitbox.collision.pos.x;
+    oldX2 = player.hitbox.collision.pos.x + player.hitbox.collision.size.x;
+    oldY1 = player.hitbox.collision.pos.y;
+    oldY2 = player.hitbox.collision.pos.y + player.hitbox.collision.size.y;
     // Exceptions first, else do incriment.
-    if (oldX + x < 0) {
+
+    // Screen Edges
+    if (oldX1 + x < 0 || oldX2 + x > zone.width) {
       x = 0;
     }
-    if (oldY + y < 0) {
+    if (oldY1 + y < 0 || oldY2 + y > zone.height) {
       y = 0;
     }
+
+    // Collision
     Players.update(id, {$inc: {"pos.x": x}});
     Players.update(id, {$inc: {"pos.y": y}});
     Players.update(id, {$set: {"animation.facing": facing}});
