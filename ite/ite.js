@@ -76,13 +76,17 @@ Meteor.methods({
     if (oldX1 + x < 0 || oldX2 + x > zone.width) {
       x = 0;
     }
+    else {
+      Players.update(id, {$inc: {"pos.x": x}});
+    }
     if (oldY1 + y < 0 || oldY2 + y > zone.height) {
       y = 0;
     }
+    else {
+      Players.update(id, {$inc: {"pos.y": y}});
+    }
 
     // Collision
-    Players.update(id, {$inc: {"pos.x": x}});
-    Players.update(id, {$inc: {"pos.y": y}});
     Players.update(id, {$set: {"animation.facing": facing}});
     Meteor.call("updateHitboxes", id, "player");
   }
