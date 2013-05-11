@@ -992,6 +992,7 @@ if (Meteor.isServer) {
   Meteor.startup(function () {
     // Init Zones
     if (!Zones.findOne({"name": "ct_cathedral"})) {
+      // Grab the collision file
       Zones.insert( {
         name: "ct_cathedral",
         layers: {
@@ -1007,6 +1008,7 @@ if (Meteor.isServer) {
             "ct_cathedral_3_collision"
           ]
         },
+        collision: ct_cathedral_3_collision,
         width: 2560,
         height: 2368,
         players: {
