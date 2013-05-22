@@ -1008,7 +1008,7 @@ if (Meteor.isServer) {
             "ct_cathedral_3_collision"
           ]
         },
-        collision: ct_cathedral_3_collision,
+        collision: ct_cathedral_3_data_collision.js,
         width: 2560,
         height: 2368,
         players: {
