@@ -34,8 +34,8 @@ Meteor.methods({
               y: player.pos.y + player.sprite.size.display.y - player.hitbox.collision.size.y
             },
             size: {
-              x: 64,
-              y: 64
+              x: 16,
+              y: 16
             }
           },
           layering: {
@@ -149,7 +149,7 @@ if (Meteor.isClient) {
     ct_cathedral_3_collision.src = "assets/zones/ct_cathedral/64x64/rooms/3/collision.png";
 
     
-    imageMainPlayer.src = "assets/test/magus_sheet_movement_big.png";
+    imageMainPlayer.src = "assets/test/magus_sheet_movement_small.png";
     imageFaun.src = "assets/Michael/CharacterModel-Faun128x256.png";
     imageCrystalBeast.src = "assets/Michael/crystalbeastpixeld384x192.png";
     /*
@@ -183,8 +183,8 @@ if (Meteor.isClient) {
     canvasMainResourcesPreload();
     sliceX = 0;
     sliceY = 0;
-    canvasMainWidth = 1024;
-    canvasMainHeight = 896;
+    canvasMainWidth = 480;
+    canvasMainHeight = 270;
     offsetX = 0;
     offsetY = 0;
   }
@@ -831,8 +831,8 @@ if (Meteor.isServer) {
               y: 0
             },
             size: {
-              x: 64,
-              y: 64
+              x: 16,
+              y: 16
             }
           },
           layering: {
@@ -860,19 +860,19 @@ if (Meteor.isServer) {
           name: "imageMainPlayer",
           size: {
             source: {
-              x: 128,
-              y: 128
+              x: 32,
+              y: 32
             },
             display: {
-              x: 128,
-              y: 128
+              x: 32,
+              y: 32
             }
           },
           point: {
             bottom: {
               center: {
-                x: 64,
-                y: 128
+                x: 16,
+                y: 32
               }
             }
           },
@@ -882,15 +882,15 @@ if (Meteor.isServer) {
               y: 0
             },
             up: {
-              x: 128,
+              x: 32,
               y: 0
             },
             right: {
-              x: 256,
+              x: 64,
               y: 0
             },
             down: {
-              x: 384,
+              x: 96,
               y: 0
             }
           }
