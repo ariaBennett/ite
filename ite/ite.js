@@ -103,7 +103,8 @@ if (Meteor.isClient) {
 
   function prewarm () {
     // Setup defaults for certain Session Variables
-    Session.set("playerNamesEnabled", "1");
+    Session.set("playerNamesEnabled", "0");
+    Session.set("hitboxDisplayEnabled", "0");
     Deps.autorun ( function () {
       if (Meteor.user()) {
         if (getPlayer = Players.findOne({"name.first": Meteor.user().username})) {
@@ -209,31 +210,69 @@ if (Meteor.isClient) {
 
       // draw to display canvas after converting data to match scaling
       // and also avoid anti aliasing.
-      var displayMultiplier = getDisplayMultiplier();
-      var canvasMainData = ctxMain.getImageData(0, 0, canvasMainWidth, canvasMainHeight);
-      setDisplaySize(displayMultiplier);
-     // enlargeData(canvasMainData, 2);
+      drawScaled(getDisplayScale());
+      // var displayScale = getDisplayScale();
+      //var canvasMainData = ctxMain.getImageData(0, 0, canvasMainWidth, canvasMainHeight);
+      //ctxDisplay.putImageData(scaleData(canvasMainData, 2), 0, 0);
+      //setDisplaySize(displayMultiplier);
       //drawDisplay(enlargeData(canvasMainData, 2));
-      drawDisplay();
 
       /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
       /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
       /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
 
-      function getDisplayMultiplier() {
+      function getDisplayScale() {
         var gameWidth =  window.innerWidth; 
         var gameHeight = window.innerHeight;
         var scaleToFitX  = gameWidth / canvasMainWidth;
         var scaleToFitY  = gameHeight / canvasMainHeight;
 
 
-        return Math.max(1, Math.floor(Math.min(scaleToFitX, scaleToFitY)));
+        return Math.max(
+            1, Math.floor(Math.min(scaleToFitX, scaleToFitY))
+        );
+      }
+
+      function drawScaled(scale) {
+
+        var canvasMainData = ctxMain.getImageData(0, 0, canvasMainWidth, canvasMainHeight).data;
+
+        var sw = canvasMainWidth * scale;
+        var sh = canvasMainHeight * scale;
+
+        canvasDisplay.width = sw;
+        canvasDisplay.height = sh;
+
+        var canvasDisplayImageData = ctxDisplay.createImageData(sw, sh);
+        var canvasDisplayData = canvasDisplayImageData.data;
+
+        var src_p = 0;
+        var dst_p = 0;
+        for (var y = 0; y < canvasMainHeight; ++y) {
+            for (var i = 0; i < scale; ++i) {
+                for (var x = 0; x < canvasMainWidth; ++x) {
+                    var src_p = 4 * (y * canvasMainWidth + x);
+                    for (var j = 0; j < scale; ++j) {
+                        var tmp = src_p;
+                        canvasDisplayData[dst_p++] = canvasMainData[tmp++];
+                        canvasDisplayData[dst_p++] = canvasMainData[tmp++];
+                        canvasDisplayData[dst_p++] = canvasMainData[tmp++];
+                        canvasDisplayData[dst_p++] = canvasMainData[tmp++];
+                    }
+                }
+            }
+        }
+        ctxDisplay.putImageData(canvasDisplayImageData, 0, 0);
+      }
+      /*
+      function scaleData(srcData, scale) {
+        dstData = 
+        return dstData;
       }
 
       function setDisplaySize(multiplier) {
-        canvasDisplay.style.width = canvasMainWidth * multiplier + "px";
-        canvasDisplay.style.height = canvasMainHeight * multiplier + "px";
       }
+      */
 
       /*
       function enlargeData(sourceData, multiplier) {
@@ -273,14 +312,7 @@ if (Meteor.isClient) {
       }
       */
 
-      function enlargeData(sourceData, multiplier) {
-      }
 
-      function drawDisplay() {
-        ctxMain.save()
-        ctxDisplay.drawImage(canvasMain, 0, 0, canvasMainWidth, canvasMainHeight);
-        ctxMain.restore();
-      }
       /*
       function drawDisplay(sourceData, multiplier) {
         var convertedData = ctxDisplay.createImageData(
@@ -500,30 +532,33 @@ if (Meteor.isClient) {
           getFocusY(player.pos.y) - 10
           ]
         );
-        // Collision hitbox
-        drawTestSquare(
-          [255,0,0,1], 
-          getFocusX(player.hitbox.collision.pos.x), 
-          getFocusY(player.hitbox.collision.pos.y), 
-          player.hitbox.collision.size.x,
-          player.hitbox.collision.size.y
-        );
-        // Layering hitbox
-        drawTestSquare(
-          [0,255,0,1], 
-          getFocusX(player.hitbox.layering.pos.x), 
-          getFocusY(player.hitbox.layering.pos.y), 
-          player.hitbox.layering.size.x,
-          player.hitbox.layering.size.y
-        );
-        // Focus hitbox
-        drawTestSquare(
-          [0,0,255,1], 
-          getFocusX(player.hitbox.focus.pos.x), 
-          getFocusY(player.hitbox.focus.pos.y), 
-          player.hitbox.focus.size.x,
-          player.hitbox.focus.size.y
-        );
+        if (Session.equals("hitboxDisplayEnabled", "1")) {
+          // Collision hitbox
+          drawTestSquare(
+            [255,0,0,1], 
+            getFocusX(player.hitbox.collision.pos.x), 
+            getFocusY(player.hitbox.collision.pos.y), 
+            player.hitbox.collision.size.x,
+            player.hitbox.collision.size.y
+          );
+          // Layering hitbox
+          drawTestSquare(
+            [0,255,0,1], 
+            getFocusX(player.hitbox.layering.pos.x), 
+            getFocusY(player.hitbox.layering.pos.y), 
+            player.hitbox.layering.size.x,
+            player.hitbox.layering.size.y
+          );
+          // Focus hitbox
+          drawTestSquare(
+            [0,0,255,1], 
+            getFocusX(player.hitbox.focus.pos.x), 
+            getFocusY(player.hitbox.focus.pos.y), 
+            player.hitbox.focus.size.x,
+            player.hitbox.focus.size.y
+          );
+        }
+
       }
       function drawPlayersOther(players, relationalObject, relation) {
         // Draws player characters who are >not< the main

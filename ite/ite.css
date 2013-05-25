@@ -34,6 +34,7 @@ html, body {
   border-width: 1px;
   */
   font-size: 48px;
+  display: none;
 }
 
 #canvasDataAbove {
