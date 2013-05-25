@@ -18,17 +18,21 @@ html, body {
 
 .allGameViews {
   margin-top: -45px;
-  margin-left: -2px;
   text-align: center;
+}
+
+#canvasDisplay {
 }
 
 #canvasMain {
   /*
   font-size: 136.499992370605455px;
   */
+  /*
   border-style: solid;
   border-color: red;
   border-width: 1px;
+  */
   font-size: 48px;
 }
 
@@ -41,3 +45,6 @@ html, body {
 #canvasDataCollision {
   display: none;
 } 
+.emptySpace {
+  height: 1080px;
+}

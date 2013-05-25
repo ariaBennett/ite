@@ -142,10 +142,10 @@ if (Meteor.isClient) {
   }
 
   function canvasMainResourcesPreload () {
-    ct_cathedral_3_1.src = "assets/zones/ct_cathedral/64x64/rooms/3/1.png";
-    ct_cathedral_3_2.src = "assets/zones/ct_cathedral/64x64/rooms/3/2.png";
-    ct_cathedral_3_3.src = "assets/zones/ct_cathedral/64x64/rooms/3/3.png";
-    ct_cathedral_3_4.src = "assets/zones/ct_cathedral/64x64/rooms/3/4.png";
+    ct_cathedral_3_1.src = "assets/zones/ct_cathedral/16x16/rooms/3/1.png";
+    ct_cathedral_3_2.src = "assets/zones/ct_cathedral/16x16/rooms/3/2.png";
+    ct_cathedral_3_3.src = "assets/zones/ct_cathedral/16x16/rooms/3/3.png";
+    ct_cathedral_3_4.src = "assets/zones/ct_cathedral/16x16/rooms/3/4.png";
     ct_cathedral_3_collision.src = "assets/zones/ct_cathedral/64x64/rooms/3/collision.png";
 
     
@@ -170,10 +170,12 @@ if (Meteor.isClient) {
           window.setTimeout(callback, 1000 / 60);
       };
     })();
+    canvasDisplay = document.getElementById("canvasDisplay");
     canvasMain = document.getElementById("canvasMain");
     canvasDataAbove = document.getElementById("canvasDataAbove");
     canvasDataBelow = document.getElementById("canvasDataBelow");
     canvasDataCollision = document.getElementById("canvasDataCollision");
+    ctxDisplay = canvasDisplay.getContext("2d");
     ctxMain = canvasMain.getContext("2d");
     ctxDataAbove = canvasDataAbove.getContext("2d");
     ctxDataBelow = canvasDataBelow.getContext("2d");
@@ -192,24 +194,118 @@ if (Meteor.isClient) {
   function drawCanvasMain () {
     // Draw updates to the main game canvas
     if (canvasMain.getContext && playerCurrent_id) {
-
       /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
       /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
       /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
 
       clearCanvas(0, 0, canvasMainWidth, canvasMainHeight);
       // clearCanvasData();
-      //drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "below");
-      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "collision");
+      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "below");
+      //drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "collision");
       drawPlayersOther(playersInZone, playerCurrent, "below");
       drawFocus(playerCurrent);
       drawPlayersOther(playersInZone, playerCurrent, "above");
-      //drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
+      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
+
+      // draw to display canvas after converting data to match scaling
+      // and also avoid anti aliasing.
+      var displayMultiplier = getDisplayMultiplier();
+      var canvasMainData = ctxMain.getImageData(0, 0, canvasMainWidth, canvasMainHeight);
+      setDisplaySize(displayMultiplier);
+     // enlargeData(canvasMainData, 2);
+      //drawDisplay(enlargeData(canvasMainData, 2));
+      drawDisplay();
+
+      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
+      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
+      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
+
+      function getDisplayMultiplier() {
+        var gameWidth =  window.innerWidth; 
+        var gameHeight = window.innerHeight;
+        var scaleToFitX  = gameWidth / canvasMainWidth;
+        var scaleToFitY  = gameHeight / canvasMainHeight;
 
 
-      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
-      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
-      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
+        return Math.max(1, Math.floor(Math.min(scaleToFitX, scaleToFitY)));
+      }
+
+      function setDisplaySize(multiplier) {
+        canvasDisplay.style.width = canvasMainWidth * multiplier + "px";
+        canvasDisplay.style.height = canvasMainHeight * multiplier + "px";
+      }
+
+      /*
+      function enlargeData(sourceData, multiplier) {
+        var convertedData = ctxDisplay.createImageData(
+          sourceData.width * 4, sourceData.height * 4
+        );
+
+        for (var height = 0; height < sourceData.height; height++) {
+          for (var width = 0; width < sourceData.width; width++) {
+            for (var i = 0; i < multiplier; i++) {
+              convertedData.concat(sourceData.data[width * height]);
+            }
+          }
+          for (var i = 0; i < multiplier; i++) {
+            convertedData.concat(expandedLine);
+          }
+        }
+        //return enlargedData;
+        convertedData.data = enlargedData;
+        return convertedData;
+      }
+      */
+
+      /*
+      function enlargeData(sourceData, multiplier) {
+        var convertedData = ctxDisplay.createImageData(
+          sourceData.width * 4, sourceData.height * 4
+        );
+        for (var i = 0, iNum = sourceData.data.length; i < iNum;
+             i += sourceData.width) {
+          
+        }
+      }
+
+      function drawDisplay(imageData) {
+        ctxDisplay.putImageData(imageData, 0, 0);
+      }
+      */
+
+      function enlargeData(sourceData, multiplier) {
+      }
+
+      function drawDisplay() {
+        ctxMain.save()
+        ctxDisplay.drawImage(canvasMain, 0, 0, canvasMainWidth, canvasMainHeight);
+        ctxMain.restore();
+      }
+      /*
+      function drawDisplay(sourceData, multiplier) {
+        var convertedData = ctxDisplay.createImageData(
+          sourceData.width * multiplier, sourceData.height * multiplier
+        );
+        //window.test = sourceData;
+        var convertedDataPlace = 0;
+
+        for (var i = 0, n = sourceData.data.length; i < n; i += 4) {
+          var r = sourceData.data[i];
+          var g = sourceData.data[i + 1];
+          var b = sourceData.data[i + 2];
+          var a = sourceData.data[i + 3];
+          for (var j = 0; j < multiplier; j++) {
+            convertedData.data[convertedDataPlace] = r; 
+            convertedData.data[convertedDataPlace + 1] = g;
+            convertedData.data[convertedDataPlace + 2] = b;
+            convertedData.data[convertedDataPlace + 3] = a;
+            convertedDataPlace += 4;
+
+          }
+        }
+        ctxDisplay.putImageData(convertedData, 0, 0);
+      }
+      */
 
       function convertToRelativePoint(point) {
         // Converts a point to a point relative to the getFocusX
@@ -255,7 +351,6 @@ if (Meteor.isClient) {
           return [target.pos.x, (target.pos.y + target.sprite.size.display.y)];
         }
         else if (point === "bottom-center") {
-          console.log((target.pos.x + target.sprite.size.display.x/2), (target.pos.y + target.sprite.size.display.y));
           return [(target.pos.x + target.sprite.size.display.x/2), (target.pos.y + target.sprite.size.display.y)];
         }
         else if (point === "bottom-right") {
@@ -1009,8 +1104,8 @@ if (Meteor.isServer) {
           ]
         },
         collision: ct_cathedral_3_data_collision.js,
-        width: 2560,
-        height: 2368,
+        width: 640,
+        height: 592,
         players: {
           online: [],
           offline: []
