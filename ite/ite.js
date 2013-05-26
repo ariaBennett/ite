@@ -73,6 +73,7 @@ Meteor.methods({
     // Exceptions first, else do incriment.
 
     // Screen Edges
+
     if (oldX1 + x < 0 || oldX2 + x > zone.width) {
       x = 0;
     }
@@ -105,6 +106,7 @@ if (Meteor.isClient) {
     // Setup defaults for certain Session Variables
     Session.set("playerNamesEnabled", "0");
     Session.set("hitboxDisplayEnabled", "0");
+    Session.set("isDebug", "0");
     Deps.autorun ( function () {
       if (Meteor.user()) {
         if (getPlayer = Players.findOne({"name.first": Meteor.user().username})) {
@@ -147,7 +149,7 @@ if (Meteor.isClient) {
     ct_cathedral_3_2.src = "assets/zones/ct_cathedral/16x16/rooms/3/2.png";
     ct_cathedral_3_3.src = "assets/zones/ct_cathedral/16x16/rooms/3/3.png";
     ct_cathedral_3_4.src = "assets/zones/ct_cathedral/16x16/rooms/3/4.png";
-    ct_cathedral_3_collision.src = "assets/zones/ct_cathedral/64x64/rooms/3/collision.png";
+    ct_cathedral_3_collision.src = "assets/zones/ct_cathedral/16x16/rooms/3/collision.png";
 
     
     imageMainPlayer.src = "assets/test/magus_sheet_movement_small.png";
@@ -204,13 +206,16 @@ if (Meteor.isClient) {
       drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "below");
       //drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "collision");
       drawPlayersOther(playersInZone, playerCurrent, "below");
-      drawFocus(playerCurrent);
+      drawFocus(playerCurrent);  // Draw the current player
       drawPlayersOther(playersInZone, playerCurrent, "above");
       drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
+      var displayScale = getDisplayScale();
+      // <DEBUG/> #ttc: 33.763835ms #end: ite.js:214 #Date: 2013-05-26 00:08:52
+      drawScaled(displayScale);  // draw to displayCanvas
+      // </DEBUG> #ttc: 33.763835ms #end: ite.js:214 #Date: 2013-05-26 00:08:52
 
       // draw to display canvas after converting data to match scaling
       // and also avoid anti aliasing.
-      drawScaled(getDisplayScale());
       // var displayScale = getDisplayScale();
       //var canvasMainData = ctxMain.getImageData(0, 0, canvasMainWidth, canvasMainHeight);
       //ctxDisplay.putImageData(scaleData(canvasMainData, 2), 0, 0);
@@ -228,14 +233,18 @@ if (Meteor.isClient) {
         var scaleToFitY  = gameHeight / canvasMainHeight;
 
 
-        return Math.max(
-            1, Math.floor(Math.min(scaleToFitX, scaleToFitY))
-        );
+        return Math.max(1, Math.floor(Math.min(scaleToFitX, 
+                                               scaleToFitY)));
       }
 
       function drawScaled(scale) {
+        // This function transfers the data on canvasMain
+        // to canvasDisplay, which is a variable size canvas.
 
+        // <DEBUG/> #ttc: 6.958866ms #end: ite.js:243 #Date: 2013-05-25 23:30:19
         var canvasMainData = ctxMain.getImageData(0, 0, canvasMainWidth, canvasMainHeight).data;
+        // </DEBUG> #ttc: 6.958866ms #end: ite.js:243 #Date: 2013-05-25 23:30:19
+
 
         var sw = canvasMainWidth * scale;
         var sh = canvasMainHeight * scale;
@@ -248,20 +257,22 @@ if (Meteor.isClient) {
 
         var src_p = 0;
         var dst_p = 0;
+        // <DEBUG/> #ttc: 23.299065ms #end: ite.js:272 #Date: 2013-05-26 00:03:48
         for (var y = 0; y < canvasMainHeight; ++y) {
-            for (var i = 0; i < scale; ++i) {
-                for (var x = 0; x < canvasMainWidth; ++x) {
-                    var src_p = 4 * (y * canvasMainWidth + x);
-                    for (var j = 0; j < scale; ++j) {
-                        var tmp = src_p;
-                        canvasDisplayData[dst_p++] = canvasMainData[tmp++];
-                        canvasDisplayData[dst_p++] = canvasMainData[tmp++];
-                        canvasDisplayData[dst_p++] = canvasMainData[tmp++];
-                        canvasDisplayData[dst_p++] = canvasMainData[tmp++];
-                    }
-                }
+          for (var i = 0; i < scale; ++i) {
+            for (var x = 0; x < canvasMainWidth; ++x) {
+              var src_p = 4 * (y * canvasMainWidth + x);
+              for (var j = 0; j < scale; ++j) {
+                var tmp = src_p;
+                canvasDisplayData[dst_p++] = canvasMainData[tmp++];
+                canvasDisplayData[dst_p++] = canvasMainData[tmp++];
+                canvasDisplayData[dst_p++] = canvasMainData[tmp++];
+                canvasDisplayData[dst_p++] = canvasMainData[tmp++];
+              }
             }
+          }
         }
+        // </DEBUG> #ttc: 23.299065ms #end: ite.js:272 #Date: 2013-05-26 00:03:48
         ctxDisplay.putImageData(canvasDisplayImageData, 0, 0);
       }
       /*
@@ -405,7 +416,9 @@ if (Meteor.isClient) {
         }
         // Fallthrough error
         else {
-          console.log("Error in function getPoint, invalid point specified");
+          if (Session.equals("isDebug", "1")) {
+            console.log("Error in fuction getPoint, invalid point specified");
+          }
         }
       }
       function getPointDifference(target, point) {
@@ -458,7 +471,9 @@ if (Meteor.isClient) {
         }
         // Fallthrough error
         else {
-          console.log("Error in function getPointDifference, invalid point specified");
+          if (Session.equals("isDebug", "1")) {
+            console.log("Error in function getPointDifference, invalid point specified");
+          }
         }
       }
       function clearCanvas (posX, posY, sizeX, sizeY) {
@@ -1138,7 +1153,7 @@ if (Meteor.isServer) {
             "ct_cathedral_3_collision"
           ]
         },
-        collision: ct_cathedral_3_data_collision.js,
+        //collision: ct_cathedral_3_data_collision.js,
         width: 640,
         height: 592,
         players: {
