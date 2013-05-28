@@ -23,7 +23,7 @@ Zones = new Meteor.Collection("Zones");
 
 // Shared Methods
 Meteor.methods({
-  updateHitboxes: function (id, type) {
+  updateHitboxes: function(id, type) {
     if (type === "player") {
       player = Players.findOne({_id: id});
       Players.update(id, {$set: {
@@ -63,7 +63,7 @@ Meteor.methods({
     }
   },
 
-  incrementPlayerPosition: function (id, x, y, facing) {
+  incrementPlayerPosition: function(id, x, y, facing) {
     player = Players.findOne({_id: id});
     zone = Zones.findOne({name: player.zone.name});
     oldX1 = player.hitbox.collision.pos.x;
@@ -90,7 +90,32 @@ Meteor.methods({
     // Collision
     Players.update(id, {$set: {"animation.facing": facing}});
     Meteor.call("updateHitboxes", id, "player");
+    Meteor.call("addData", player, "player", player.zone);
+  },
+
+  addData: function(data, catagory, zone) {
+    var startX;
+    var startY;
+    var endX;
+    var endY;
+    if (catagory === "player") {
+      var size = 32;
+      startX = Math.floor(data.hitbox.collision.pos.x / size);
+      startY = Math.floor(data.hitbox.collision.pos.y / size);
+      endX = Math.floor((data.hitbox.collision.pos.x + data.hitbox.collision.size.x) / size);
+      endY = Math.floor((data.hitbox.collision.pos.y + data.hitbox.collision.size.y) / size);
+      console.log(endX);
+      console.log(endY);
+    }
+
+    for (var x = startX; x <= endX; x++) {
+      for (var y = startY; y <= endY; y++) {
+      }
+    }
+  },
+  removeData: function(data, zone) {
   }
+
 });
 
 
@@ -179,7 +204,6 @@ if (Meteor.isClient) {
     canvasDataBelow = document.getElementById("canvasDataBelow");
     canvasDataCollision = document.getElementById("canvasDataCollision");
     ctxDisplay = canvasDisplay.getContext("2d");
-    disableSmoothing(ctxDisplay);
     ctxMain = canvasMain.getContext("2d");
     ctxDataAbove = canvasDataAbove.getContext("2d");
     ctxDataBelow = canvasDataBelow.getContext("2d");
@@ -196,7 +220,15 @@ if (Meteor.isClient) {
   }
 
   function disableSmoothing(ctx) {
-    ctx.webkitImageSmoothingEnabled = false;
+    if (ctx.webkitImageSmoothingEnabled) {
+      ctx.webkitImageSmoothingEnabled = false;
+    }
+    else if (ctx.mozImageSmoothingEnabled) {
+      ctx.mozImageSmoothingEnabled = false;
+    }
+    else {
+      ctx.imageSmoothingEnabled = false;
+    }
   }
 
   function drawCanvasMain() {
@@ -215,123 +247,13 @@ if (Meteor.isClient) {
       }
 
       function drawCanvasDisplay(scale) {
-        ctxDisplay.drawImage(canvasMain, 0, 0, canvasMainWidth * scale, 
+        canvasDisplay.width = canvasMainWidth * scale;
+        canvasDisplay.height = canvasMainHeight * scale;
+        disableSmoothing(ctxDisplay);
+
+        ctxDisplay.drawImage(canvasMain, 0, 0, canvasMainWidth * scale , 
                                                canvasMainHeight * scale);
       }
-      /*
-      function drawScaled(scale) {
-        // This function transfers the data on canvasMain
-        // to canvasDisplay, which is a variable size canvas.
-
-        // <DEBUG/> #ttc: 6.958866ms #end: ite.js:243 #Date: 2013-05-25 23:30:19
-        var canvasMainData = ctxMain.getImageData(0, 0, canvasMainWidth, canvasMainHeight).data;
-        // </DEBUG> #ttc: 6.958866ms #end: ite.js:243 #Date: 2013-05-25 23:30:19
-
-
-        var sw = canvasMainWidth * scale;
-        var sh = canvasMainHeight * scale;
-
-        canvasDisplay.width = sw;
-        canvasDisplay.height = sh;
-
-        var canvasDisplayImageData = ctxDisplay.createImageData(sw, sh);
-        var canvasDisplayData = canvasDisplayImageData.data;
-
-        var src_p = 0;
-        var dst_p = 0;
-        // <DEBUG/> #ttc: 23.299065ms #end: ite.js:272 #Date: 2013-05-26 00:03:48
-        for (var y = 0; y < canvasMainHeight; ++y) {
-          for (var i = 0; i < scale; ++i) {
-            for (var x = 0; x < canvasMainWidth; ++x) {
-              var src_p = 4 * (y * canvasMainWidth + x);
-              for (var j = 0; j < scale; ++j) {
-                var tmp = src_p;
-                canvasDisplayData[dst_p++] = canvasMainData[tmp++];
-                canvasDisplayData[dst_p++] = canvasMainData[tmp++];
-                canvasDisplayData[dst_p++] = canvasMainData[tmp++];
-                canvasDisplayData[dst_p++] = canvasMainData[tmp++];
-              }
-            }
-          }
-        }
-        // </DEBUG> #ttc: 23.299065ms #end: ite.js:272 #Date: 2013-05-26 00:03:48
-        ctxDisplay.putImageData(canvasDisplayImageData, 0, 0);
-      }
-      */
-      /*
-      function scaleData(srcData, scale) {
-        dstData = 
-        return dstData;
-      }
-
-      function setDisplaySize(multiplier) {
-      }
-      */
-
-      /*
-      function enlargeData(sourceData, multiplier) {
-        var convertedData = ctxDisplay.createImageData(
-          sourceData.width * 4, sourceData.height * 4
-        );
-
-        for (var height = 0; height < sourceData.height; height++) {
-          for (var width = 0; width < sourceData.width; width++) {
-            for (var i = 0; i < multiplier; i++) {
-              convertedData.concat(sourceData.data[width * height]);
-            }
-          }
-          for (var i = 0; i < multiplier; i++) {
-            convertedData.concat(expandedLine);
-          }
-        }
-        //return enlargedData;
-        convertedData.data = enlargedData;
-        return convertedData;
-      }
-      */
-
-      /*
-      function enlargeData(sourceData, multiplier) {
-        var convertedData = ctxDisplay.createImageData(
-          sourceData.width * 4, sourceData.height * 4
-        );
-        for (var i = 0, iNum = sourceData.data.length; i < iNum;
-             i += sourceData.width) {
-          
-        }
-      }
-
-      function drawDisplay(imageData) {
-        ctxDisplay.putImageData(imageData, 0, 0);
-      }
-      */
-
-
-      /*
-      function drawDisplay(sourceData, multiplier) {
-        var convertedData = ctxDisplay.createImageData(
-          sourceData.width * multiplier, sourceData.height * multiplier
-        );
-        //window.test = sourceData;
-        var convertedDataPlace = 0;
-
-        for (var i = 0, n = sourceData.data.length; i < n; i += 4) {
-          var r = sourceData.data[i];
-          var g = sourceData.data[i + 1];
-          var b = sourceData.data[i + 2];
-          var a = sourceData.data[i + 3];
-          for (var j = 0; j < multiplier; j++) {
-            convertedData.data[convertedDataPlace] = r; 
-            convertedData.data[convertedDataPlace + 1] = g;
-            convertedData.data[convertedDataPlace + 2] = b;
-            convertedData.data[convertedDataPlace + 3] = a;
-            convertedDataPlace += 4;
-
-          }
-        }
-        ctxDisplay.putImageData(convertedData, 0, 0);
-      }
-      */
 
       function convertToRelativePoint(point) {
         // Converts a point to a point relative to the getFocusX
@@ -780,21 +702,6 @@ if (Meteor.isClient) {
       drawPlayersOther(playersInZone, playerCurrent, "above");
       drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
       drawCanvasDisplay(displayScale);
-      
-      
-      
-      
-      // <DEBUG/> #ttc: 33.763835ms #end: ite.js:214 #Date: 2013-05-26 00:08:52
-      //drawScaled(displayScale);  // draw to displayCanvas
-      // </DEBUG> #ttc: 33.763835ms #end: ite.js:214 #Date: 2013-05-26 00:08:52
-
-      // draw to display canvas after converting data to match scaling
-      // and also avoid anti aliasing.
-      // var displayScale = getDisplayScale();
-      //var canvasMainData = ctxMain.getImageData(0, 0, canvasMainWidth, canvasMainHeight);
-      //ctxDisplay.putImageData(scaleData(canvasMainData, 2), 0, 0);
-      //setDisplaySize(displayMultiplier);
-      //drawDisplay(enlargeData(canvasMainData, 2));
 
       /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
       /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
@@ -892,7 +799,7 @@ if (Meteor.isClient) {
   function tryMovement () { 
     window.setInterval(function () {
       if (playerCurrent_id) {
-        moveAmount = 4;
+        moveAmount = 1;
         // Movement
         // Left Arrow, Negative X
         if (Session.equals("keyArrowLeft", "down")) {
@@ -1153,7 +1060,16 @@ if (Meteor.isServer) {
   Meteor.startup(function () {
     // Init Zones
     if (!Zones.findOne({"name": "ct_cathedral"})) {
-      // Grab the collision file
+      var width = 640;
+      var height = 592;
+      var divisionSize = 32;
+      var data = [];
+      for (var y = 0; y * divisionSize < height; y++) {
+        data.push([]);
+        for (var x = 0; x * divisionSize < width; x++) {
+          data[y].push([]);
+        }
+      }
       Zones.insert( {
         name: "ct_cathedral",
         layers: {
@@ -1170,12 +1086,9 @@ if (Meteor.isServer) {
           ]
         },
         //collision: ct_cathedral_3_data_collision.js,
-        width: 640,
-        height: 592,
-        players: {
-          online: [],
-          offline: []
-        }
+        width: width,
+        height: height,
+        data: data 
       });                              
     }
   });
