@@ -164,7 +164,7 @@ if (Meteor.isClient) {
     */
   }
   
-  function canvasMainSetup () {
+  function animationFrameSetup () {
     window.requestAnimFrame = (function () {
       return window.requestAnimationFrame   ||
         window.webkitRequestAnimationFrame  ||
@@ -179,6 +179,7 @@ if (Meteor.isClient) {
     canvasDataBelow = document.getElementById("canvasDataBelow");
     canvasDataCollision = document.getElementById("canvasDataCollision");
     ctxDisplay = canvasDisplay.getContext("2d");
+    disableSmoothing(ctxDisplay);
     ctxMain = canvasMain.getContext("2d");
     ctxDataAbove = canvasDataAbove.getContext("2d");
     ctxDataBelow = canvasDataBelow.getContext("2d");
@@ -194,37 +195,13 @@ if (Meteor.isClient) {
     offsetY = 0;
   }
 
-  function drawCanvasMain () {
+  function disableSmoothing(ctx) {
+    ctx.webkitImageSmoothingEnabled = false;
+  }
+
+  function drawCanvasMain() {
     // Draw updates to the main game canvas
     if (canvasMain.getContext && playerCurrent_id) {
-      /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
-      /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
-      /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
-
-      clearCanvas(0, 0, canvasMainWidth, canvasMainHeight);
-      // clearCanvasData();
-      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "below");
-      //drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "collision");
-      drawPlayersOther(playersInZone, playerCurrent, "below");
-      drawFocus(playerCurrent);  // Draw the current player
-      drawPlayersOther(playersInZone, playerCurrent, "above");
-      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
-      var displayScale = getDisplayScale();
-      // <DEBUG/> #ttc: 33.763835ms #end: ite.js:214 #Date: 2013-05-26 00:08:52
-      drawScaled(displayScale);  // draw to displayCanvas
-      // </DEBUG> #ttc: 33.763835ms #end: ite.js:214 #Date: 2013-05-26 00:08:52
-
-      // draw to display canvas after converting data to match scaling
-      // and also avoid anti aliasing.
-      // var displayScale = getDisplayScale();
-      //var canvasMainData = ctxMain.getImageData(0, 0, canvasMainWidth, canvasMainHeight);
-      //ctxDisplay.putImageData(scaleData(canvasMainData, 2), 0, 0);
-      //setDisplaySize(displayMultiplier);
-      //drawDisplay(enlargeData(canvasMainData, 2));
-
-      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
-      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
-      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
 
       function getDisplayScale() {
         var gameWidth =  window.innerWidth; 
@@ -237,6 +214,11 @@ if (Meteor.isClient) {
                                                scaleToFitY)));
       }
 
+      function drawCanvasDisplay(scale) {
+        ctxDisplay.drawImage(canvasMain, 0, 0, canvasMainWidth * scale, 
+                                               canvasMainHeight * scale);
+      }
+      /*
       function drawScaled(scale) {
         // This function transfers the data on canvasMain
         // to canvasDisplay, which is a variable size canvas.
@@ -275,6 +257,7 @@ if (Meteor.isClient) {
         // </DEBUG> #ttc: 23.299065ms #end: ite.js:272 #Date: 2013-05-26 00:03:48
         ctxDisplay.putImageData(canvasDisplayImageData, 0, 0);
       }
+      */
       /*
       function scaleData(srcData, scale) {
         dstData = 
@@ -783,6 +766,39 @@ if (Meteor.isClient) {
           ctxMain.strokeText(player.name.first, position[0], position[1]);
         }
       }
+      /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
+      /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
+      /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
+      var displayScale = getDisplayScale();
+
+      clearCanvas(0, 0, canvasMainWidth, canvasMainHeight);
+      // clearCanvasData();
+      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "below");
+      //drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "collision");
+      drawPlayersOther(playersInZone, playerCurrent, "below");
+      drawFocus(playerCurrent);  // Draw the current player
+      drawPlayersOther(playersInZone, playerCurrent, "above");
+      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
+      drawCanvasDisplay(displayScale);
+      
+      
+      
+      
+      // <DEBUG/> #ttc: 33.763835ms #end: ite.js:214 #Date: 2013-05-26 00:08:52
+      //drawScaled(displayScale);  // draw to displayCanvas
+      // </DEBUG> #ttc: 33.763835ms #end: ite.js:214 #Date: 2013-05-26 00:08:52
+
+      // draw to display canvas after converting data to match scaling
+      // and also avoid anti aliasing.
+      // var displayScale = getDisplayScale();
+      //var canvasMainData = ctxMain.getImageData(0, 0, canvasMainWidth, canvasMainHeight);
+      //ctxDisplay.putImageData(scaleData(canvasMainData, 2), 0, 0);
+      //setDisplaySize(displayMultiplier);
+      //drawDisplay(enlargeData(canvasMainData, 2));
+
+      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
+      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
+      /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
     }
   }
   
@@ -935,7 +951,7 @@ if (Meteor.isClient) {
 
   // Startup Sequence
   Meteor.startup(prewarm);
-  Meteor.startup(canvasMainSetup);
+  Meteor.startup(animationFrameSetup);
   Meteor.startup(canvasMainDrawLoop);
   Meteor.startup(attachControls);
   Meteor.startup(tryMovement);
