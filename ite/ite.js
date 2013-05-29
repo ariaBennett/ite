@@ -142,7 +142,7 @@ Meteor.methods({
 
     for (var col = startCol; col <= endCol; col++) {
       for (var row = startRow; row <= endRow; row++) {
-        console.log("row: " + row.toString() + "  col: " + col.toString());
+        //console.log("row: " + row.toString() + "  col: " + col.toString());
         Zones.update({
           _id: zone._id,
 
@@ -920,8 +920,8 @@ if (Meteor.isServer) {
         },
         section_ids: [starting_section_id],
         pos: {
-          x: 0,
-          y: 0,
+          x: 200,
+          y: 200,
           z: 0
         },
         hitbox: {

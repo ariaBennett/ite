@@ -30,11 +30,10 @@ class Collision_Data():
                 if data_type == "row_array":
                     constructor = []
                     for y in range(im.size[1]):
-                        constructor.append([])
                         row = ""
                         for x in range(im.size[0]):
                             row = row + str((source[A].getdata())[(im.size[0] * y) + x])
-                        constructor[y] = [row]
+                        constructor.append(row)
 
                 elif data_type == "string":
                     constructor = ""
@@ -113,6 +112,8 @@ class Collision_Data():
             except IOError:
                 print "cannot do collision conversion"
 
+
+
     def to_rects(self, width, height):
         constructor = []
 
@@ -125,13 +126,41 @@ class Collision_Data():
         columns = columns_rows[0]
         rows = columns_rows[1]
 
+        # resize arrays to be correct length
+
         for row in data:
+            x = 0
+            while (x * width < im_width + 1):
+                if (im_width - (x * width) < width):
+                    remaining = im_width - (x * width)
+                    constructor.append((row[x*width:x*width + remaining]) + ("1" * (width - remaining)))
+                else:
+                    constructor.append(row[x*width:x*width + width])
+                x = x + 1
+
+        tmp = []
+        for row in constructor:
+             
+
+        return constructor
+
+
+
+
+
+
+
+
+
+
+        """
             for i in range(columns):
                 sec_row = ""
                 for j in range(width):
                     pass
                     #sec_row = sec_row + row[(i * width) + j]
                 #print sec_row
+                """
 
 
 
@@ -180,9 +209,9 @@ collision = Collision_Data(sys.argv[1:])
 #print collision.to_line_array()
 #collision.write_js(collision.rip_raw_data("string", True))
 #collision.write_js(collision.to_sections(32))
-#collision.write_py(collision.to_rects(32, 32))
+collision.write_py(collision.to_rects(32, 32))
 #collision.write_js(collision.rip_raw_data("row_array", False))
-collision.write_py(collision.rip_raw_data("row_array", True))
+#collision.write_py(collision.rip_raw_data("row_array", True))
 
 
 '''
