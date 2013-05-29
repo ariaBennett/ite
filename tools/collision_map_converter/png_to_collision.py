@@ -128,21 +128,48 @@ class Collision_Data():
 
         # resize arrays to be correct length
 
+        tmp_array = []
         for row in data:
             x = 0
-            while (x * width < im_width + 1):
+            while (x * width < im_width):
                 if (im_width - (x * width) < width):
                     remaining = im_width - (x * width)
-                    constructor.append((row[x*width:x*width + remaining]) + ("1" * (width - remaining)))
+                    tmp_array.append((row[x*width:x*width - remaining]) + ("1" * remaining))
                 else:
-                    constructor.append(row[x*width:x*width + width])
+                    tmp_array.append(row[x*width:x*width + width])
                 x = x + 1
 
-        tmp = []
-        for row in constructor:
-             
 
-        return constructor
+        sections = []
+        counter = 0
+        tmp_rows_len = len(tmp_array)
+        for r in range(rows):
+            sections.append([])
+            for i in range(columns):
+                sections[r].append("")
+            for i in range(height):
+                for c in range(columns):
+                    counter = counter + 1
+                    if (counter < (tmp_rows_len)):
+                        sections[r][c] = sections[r][c] + tmp_array[counter]
+                        pass
+                    else:
+                        pass
+
+        #print counter
+        #print sections
+        """
+        print tmp_rows_len
+        print sections
+        """
+        #print tmp_array
+
+
+        #for row in data:
+
+        #return sections
+        print sections
+        return sections 
 
 
 
@@ -211,7 +238,7 @@ collision = Collision_Data(sys.argv[1:])
 #collision.write_js(collision.to_sections(32))
 collision.write_py(collision.to_rects(32, 32))
 #collision.write_js(collision.rip_raw_data("row_array", False))
-#collision.write_py(collision.rip_raw_data("row_array", True))
+#collision.write_py(collision.rip_raw_data("row_array", False))
 
 
 '''
