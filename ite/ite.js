@@ -18,8 +18,10 @@
 // -Aria Bennett
 
 // Shared Databases
-Players = new Meteor.Collection("Players");
-Zones = new Meteor.Collection("Zones");
+Players = new Meteor.Collection("players");
+Zones = new Meteor.Collection("zones");
+Areas = new Meteor.Collection("areas");
+Sections = new Meteor.Collection("sections");
 
 // Shared Methods
 Meteor.methods({
@@ -90,26 +92,32 @@ Meteor.methods({
     // Collision
     Players.update(id, {$set: {"animation.facing": facing}});
     Meteor.call("updateHitboxes", id, "player");
-    Meteor.call("addData", player, "player", player.zone);
+    Meteor.call("addData", player, "player", zone);
   },
 
   addData: function(data, catagory, zone) {
-    var startX;
-    var startY;
-    var endX;
-    var endY;
+    var startCol;
+    var startRow;
+    var endCol;
+    var endRow;
     if (catagory === "player") {
       var size = 32;
-      startX = Math.floor(data.hitbox.collision.pos.x / size);
-      startY = Math.floor(data.hitbox.collision.pos.y / size);
-      endX = Math.floor((data.hitbox.collision.pos.x + data.hitbox.collision.size.x) / size);
-      endY = Math.floor((data.hitbox.collision.pos.y + data.hitbox.collision.size.y) / size);
-      console.log(endX);
-      console.log(endY);
+      startCol = Math.floor((data.hitbox.collision.pos.x) / size);
+      startRow = Math.floor((data.hitbox.collision.pos.y) / size);
+      endCol =   Math.ceil((data.hitbox.collision.pos.x + data.hitbox.collision.size.x) / size) - 1;
+      endRow =   Math.ceil((data.hitbox.collision.pos.y + data.hitbox.collision.size.y) / size) - 1;
     }
 
-    for (var x = startX; x <= endX; x++) {
-      for (var y = startY; y <= endY; y++) {
+    for (var col = startCol; col <= endCol; col++) {
+      for (var row = startRow; row <= endRow; row++) {
+        console.log("row: " + row.toString() + "  col: " + col.toString());
+        Zones.update({
+          _id: zone._id,
+
+        }, 
+        {
+          $set: {data: []}
+        });
       }
     }
   },
@@ -137,14 +145,16 @@ if (Meteor.isClient) {
         if (getPlayer = Players.findOne({"name.first": Meteor.user().username})) {
           playerCurrent_id = getPlayer._id;
           playerCurrent = getPlayer;
-          playerCurrentZone = Zones.findOne({name: playerCurrent.zone.name});
-          playersInZone = Players.find({"zone.name": getPlayer.zone.name, "online": "true"},
+          playerCurrentArea_id = (Sections.findOne({_id: playerCurrent.section_ids[0]})).area_id;
+          playerCurrentArea = Areas.findOne({_id: playerCurrentArea_id});
+          playerCurrentZone = Zones.findOne({_id: playerCurrentArea.zone_id});
+          playersInArea = Players.find({"zone.name": getPlayer.zone.name, "online": "true"},
             {sort: {"hitbox.layering.pos.y": 1}}, {sort: {"pos.z": 1}}).fetch();
         }
       }
       if (!Meteor.user()) {
         playerCurrent_id = "";
-        playersInZone = "";
+        playersInArea = "";
       }
     });
   }
@@ -202,12 +212,10 @@ if (Meteor.isClient) {
     canvasMain = document.getElementById("canvasMain");
     canvasDataAbove = document.getElementById("canvasDataAbove");
     canvasDataBelow = document.getElementById("canvasDataBelow");
-    canvasDataCollision = document.getElementById("canvasDataCollision");
     ctxDisplay = canvasDisplay.getContext("2d");
     ctxMain = canvasMain.getContext("2d");
     ctxDataAbove = canvasDataAbove.getContext("2d");
     ctxDataBelow = canvasDataBelow.getContext("2d");
-    ctxDataCollision = canvasDataCollision.getContext("2d");
     canvasDataLoaded = 0;
     canvasMainResourcesDeclare();
     canvasMainResourcesPreload();
@@ -396,11 +404,11 @@ if (Meteor.isClient) {
         else if (x < canvasMainWidth/2) {
           return x;
         }
-        else if (x < playerCurrentZone.width - canvasMainWidth/2) {
+        else if (x < playerCurrentArea.width - canvasMainWidth/2) {
           return canvasMainWidth/2;
         }
-        else if (x <= playerCurrentZone.width) {
-          return canvasMainWidth - (playerCurrentZone.width - x);
+        else if (x <= playerCurrentArea.width) {
+          return canvasMainWidth - (playerCurrentArea.width - x);
         }
       }
       function getFocusY (y) {
@@ -410,11 +418,11 @@ if (Meteor.isClient) {
         else if (y < canvasMainHeight/2) {
           return y;
         }
-        else if (y < playerCurrentZone.height - canvasMainHeight/2) {
+        else if (y < playerCurrentArea.height - canvasMainHeight/2) {
           return canvasMainHeight/2;
         }
-        else if (y <= playerCurrentZone.height) {
-          return canvasMainHeight - (playerCurrentZone.height - y);
+        else if (y <= playerCurrentArea.height) {
+          return canvasMainHeight - (playerCurrentArea.height - y);
         }
       }
       function drawFocus(player) {
@@ -625,11 +633,11 @@ if (Meteor.isClient) {
             else if (x < canvasMainWidth/2) {
                 return 0;
             }
-            else if (x < playerCurrentZone.width - canvasMainWidth/2) {
+            else if (x < playerCurrentArea.width - canvasMainWidth/2) {
               return x - canvasMainWidth/2;
             }
-            else if (x >= playerCurrentZone.width - canvasMainWidth/2) {
-              return playerCurrentZone.width - canvasMainWidth; 
+            else if (x >= playerCurrentArea.width - canvasMainWidth/2) {
+              return playerCurrentArea.width - canvasMainWidth; 
             }
           }
 
@@ -639,11 +647,11 @@ if (Meteor.isClient) {
             else if (y < canvasMainHeight/2) {
                 return 0;
             }
-            else if (y < playerCurrentZone.height - canvasMainHeight/2) {
+            else if (y < playerCurrentArea.height - canvasMainHeight/2) {
               return y - canvasMainHeight/2;
             }
-            else if (y >= playerCurrentZone.height - canvasMainHeight/2) {
-              return playerCurrentZone.height - canvasMainHeight; 
+            else if (y >= playerCurrentArea.height - canvasMainHeight/2) {
+              return playerCurrentArea.height - canvasMainHeight; 
             }
           }
 
@@ -651,8 +659,8 @@ if (Meteor.isClient) {
             ctxMain.drawImage(image, 
               -getViewX(image),
               -getViewY(image),
-              playerCurrentZone.width,
-              playerCurrentZone.height);
+              playerCurrentArea.width,
+              playerCurrentArea.height);
           }
 
           if (relation === "below") {
@@ -660,9 +668,6 @@ if (Meteor.isClient) {
           }
           else if (relation === "above") {
             drawImageAtRelationalPoint(canvasDataAbove);
-          }
-          else if (relation === "collision") {
-            drawImageAtRelationalPoint(canvasDataCollision);
           }
         }
       }
@@ -697,9 +702,9 @@ if (Meteor.isClient) {
       // clearCanvasData();
       drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "below");
       //drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "collision");
-      drawPlayersOther(playersInZone, playerCurrent, "below");
+      drawPlayersOther(playersInArea, playerCurrent, "below");
       drawFocus(playerCurrent);  // Draw the current player
-      drawPlayersOther(playersInZone, playerCurrent, "above");
+      drawPlayersOther(playersInArea, playerCurrent, "above");
       drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
       drawCanvasDisplay(displayScale);
 
@@ -711,24 +716,17 @@ if (Meteor.isClient) {
   
   function canvasMainDrawLoop () {
     (function animloop(){
-      if (!canvasDataLoaded && canvasDataBelow.getContext && canvasDataAbove.getContext && 
-          canvasDataCollision.getContext && playerCurrent_id) {
-          canvasDataBelow.width = window[playerCurrentZone.layers.below[0]].width;
-          canvasDataBelow.height = window[playerCurrentZone.layers.below[0]].height;
-        _.each(playerCurrentZone.layers.below, function (layer) {
+      if (!canvasDataLoaded && canvasDataBelow.getContext && canvasDataAbove.getContext && playerCurrent_id) {
+          canvasDataBelow.width = window[playerCurrentArea.layers.below[0]].width;
+          canvasDataBelow.height = window[playerCurrentArea.layers.below[0]].height;
+        _.each(playerCurrentArea.layers.below, function (layer) {
           ctxDataBelow.drawImage(window[layer], 0, 0);
         });
-          canvasDataAbove.width = window[playerCurrentZone.layers.above[0]].width;
-          canvasDataAbove.height = window[playerCurrentZone.layers.above[0]].height;
-        _.each(playerCurrentZone.layers.above, function (layer) {
+          canvasDataAbove.width = window[playerCurrentArea.layers.above[0]].width;
+          canvasDataAbove.height = window[playerCurrentArea.layers.above[0]].height;
+        _.each(playerCurrentArea.layers.above, function (layer) {
           ctxDataAbove.drawImage(window[layer], 0, 0);
         });
-          canvasDataCollision.width = window[playerCurrentZone.layers.collision[0]].width;
-          canvasDataCollision.height = window[playerCurrentZone.layers.collision[0]].height;
-        _.each(playerCurrentZone.layers.collision, function (layer) {
-          ctxDataCollision.drawImage(window[layer], 0, 0);
-        });
-
         canvasDataLoaded = 1;
       }
       requestAnimFrame(animloop);
@@ -870,7 +868,7 @@ if (Meteor.isServer) {
 
   Meteor.methods({
     // Server Meteor.methods
-    createPlayer: function (name) {
+    createPlayer: function (name, starting_section_id) {
       Players.insert( {
         account: {
           region: "North America",
@@ -883,10 +881,12 @@ if (Meteor.isServer) {
           last: "",
           suffix: ""
         },
+        //TODO# Pull other players from sections instead of
+        //faking it with temporary zone stand in
         zone: {
-          type: "static",
           name: "ct_cathedral"
         },
+        section_ids: [starting_section_id],
         pos: {
           x: 0,
           y: 0,
@@ -1044,6 +1044,67 @@ if (Meteor.isServer) {
           }
         }
       }});
+    },
+
+    addZone: function (name) {
+      return Zones.insert({name: name});
+    },
+    addArea: function (zone_id, zone_name, name, width, height, layersBelow, layersAbove) {
+      return Areas.insert({
+        zone_id: zone_id,
+        zone_name: zone_name,
+        name: name,
+        width: width,
+        height: height,
+        // TODO# handle layers as sections instead
+        // of areas.
+        layers: {
+          below: layersBelow,
+          above: layersAbove
+        }
+      });
+    },
+    addSection: function (area_id, areaName, column, row, x, y, sectionSize) {
+      Sections.insert({
+        area_id: area_id,
+        area_name: areaName,
+        column: column,
+        row: row,
+        x: x,
+        y: y,
+        sectionSize: sectionSize
+      });
+    },
+    generateSections: function (area_id, areaName, areaWidth, areaHeight, sectionSize) {
+      //var areaWidth = 640;
+      //var areaHeight = 592;
+      //var sectionSize = 32;
+      for (var column = 0; column * sectionSize < areaWidth; column++) {
+        for (var row = 0; row * sectionSize < areaHeight; row++) {
+          Meteor.call("addSection", area_id, areaName, column, row,
+                      (column * sectionSize), (row * sectionSize), sectionSize);
+          /*
+          data[column][row] = {
+            column: column,
+            row: row,
+            pos: {
+              x: column * sectionSize,
+              y: row * sectionSize
+            },
+            sectionSize: sectionSize
+          };
+          */
+        }
+      }
+    },
+    initZone: function (zoneName, areaDocArray, sectionSize) {
+      var zone_id = Meteor.call("addZone", zoneName);
+      _.each(areaDocArray, function(area){
+        var area_id = Meteor.call("addArea", zone_id, zoneName, area.name, area.width,
+                                  area.height, area.layersBelow, area.layersAbove);
+        Meteor.call("generateSections", area_id, area.name, area.width, area.height, sectionSize);
+      });
+      return zone_id;
     }
   });
 
@@ -1052,7 +1113,8 @@ if (Meteor.isServer) {
     if (options.profile)
       user.profile = options.profile;
     if (!Players.findOne({"name.first": user.username})) {
-      Meteor.call("createPlayer", user.username);
+      starting_section_id = Sections.findOne({area_name: "ct_cathedral_3", column: 0, row: 0})._id;
+      Meteor.call("createPlayer", user.username, starting_section_id);
     }
     return user;
   });
@@ -1060,36 +1122,35 @@ if (Meteor.isServer) {
   Meteor.startup(function () {
     // Init Zones
     if (!Zones.findOne({"name": "ct_cathedral"})) {
-      var width = 640;
-      var height = 592;
-      var divisionSize = 32;
-      var data = [];
-      for (var y = 0; y * divisionSize < height; y++) {
-        data.push([]);
-        for (var x = 0; x * divisionSize < width; x++) {
-          data[y].push([]);
-        }
-      }
-      Zones.insert( {
-        name: "ct_cathedral",
-        layers: {
-          below: [
+      var areaDocs = [
+        {
+          name: "ct_cathedral_3",
+          width: 640,
+          height: 592,
+          layersBelow: [
             "ct_cathedral_3_3",
             "ct_cathedral_3_4"
           ],
-          above: [
+          layersAbove: [
             "ct_cathedral_3_1",
             "ct_cathedral_3_2"
-          ],
-          collision: [
-            "ct_cathedral_3_collision"
           ]
         },
-        //collision: ct_cathedral_3_data_collision.js,
-        width: width,
-        height: height,
-        data: data 
-      });                              
+        {
+          name: "ct_cathedral_test",
+          width: 1000,
+          height: 1000,
+          layersBelow: [
+            "ct_cathedral_3_3",
+            "ct_cathedral_3_4"
+          ],
+          layersAbove: [
+            "ct_cathedral_3_1",
+            "ct_cathedral_3_2"
+          ]
+        }
+      ];
+      Meteor.call("initZone", "ct_cathedral", areaDocs, 32);
     }
   });
 }
