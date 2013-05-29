@@ -1,3 +1,35 @@
+// Thoughts
+// Secret of Mana combat, dark souls stamina bar,
+// League of Legends QWER skills with aimed reticles,
+// Chrono Trigger combo attack system by mixing QWER skills
+// with allies' attacks.
+//
+// For controls, WER + Space + arrow keys feels pretty nice.
+// Or maybe QWE + Space?
+// Maybe numpad for movement.
+//
+// I like ASD + L-Shift + space key a lot.
+// Shift is a good option for blocking, space
+// is a good main attack button, ASD make decent
+// skill buttons, num-pad has an easy access enter key...
+//
+// QWE/ASD Skill ideas: Some skills could force a player
+// to be still, open vulnerability, etc.  Esp. mages channeling
+// big spells.
+//
+// Stamina bar is shared between at least spacebar and l-shift,
+// like dark souls.  This prevents spamming the attack button.
+//
+// For mages/whoever, perhaps space or shift could be part of a 
+// skill charging system.
+//
+// QWE/ASD skills I'm not so sure on.
+//
+//
+//
+// No more thoughts after this point.
+//
+//
 // ITE Copyright 2013 by Aria Bennett
 // All rights reserved.
 //
@@ -92,10 +124,10 @@ Meteor.methods({
     // Collision
     Players.update(id, {$set: {"animation.facing": facing}});
     Meteor.call("updateHitboxes", id, "player");
-    Meteor.call("addData", player, "player", zone);
+    Meteor.call("updateSections", player, "player", zone);
   },
 
-  addData: function(data, catagory, zone) {
+  updateSections: function(data, catagory, zone) {
     var startCol;
     var startRow;
     var endCol;
