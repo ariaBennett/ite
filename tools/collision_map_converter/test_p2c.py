@@ -6,7 +6,7 @@ class Test():
     def __init__(self):
         self.col = p2c.Collision_Data(sys.argv[1:])
         self.rects_32 = self.col.to_rects(32, 32)
-    def compare(self, data, rows, columns, width, height):
+    def compare_grids(self, data, rows, columns, width, height):
         print self.get_size(data)
         print (rows * columns) * (width * height)
 
@@ -14,9 +14,7 @@ class Test():
         size = 0
         for row in data:
             for column in row:
-                for item in column:
-                    size = size + 1
-        print data[18]
+                print len(column)
         return size
     def find_bottom(self, data):
         count = 0
@@ -33,6 +31,8 @@ class Test():
 
      
 test = Test()
-test.compare(test.rects_32, 19, 20, 32, 32)
+print test.get_size(test.rects_32)
+#test.compare_grids(test.rects_32, 19, 20, 32, 32)
+#test.compare_size(test.rects_32, 19, 20, 32, 32)
 #test.find_bottom(test.rects_32)
             

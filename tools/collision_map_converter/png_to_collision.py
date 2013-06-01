@@ -131,14 +131,14 @@ class Collision_Data():
         tmp_array = []
         for row in data:
             x = 0
-            while (x * width < im_width):
+            while ((x * width)  < im_width):
                 if (im_width - (x * width) < width):
-                    remaining = im_width - (x * width)
-                    tmp_array.append((row[x*width:x*width - remaining]) + ("1" * remaining))
+                    remaining = im_width  - (x * width)
+                    tmp_array.append((row[x*width:x*width - remaining]))
+                    pass
                 else:
                     tmp_array.append(row[x*width:x*width + width])
                 x = x + 1
-
 
         sections = []
         counter = 0
@@ -149,12 +149,13 @@ class Collision_Data():
                 sections[r].append("")
             for i in range(height):
                 for c in range(columns):
-                    counter = counter + 1
                     if (counter < (tmp_rows_len)):
                         sections[r][c] = sections[r][c] + tmp_array[counter]
-                        pass
-                    else:
-                        pass
+                    counter = counter + 1
+
+
+
+        return sections 
 
         #print counter
         #print sections
@@ -168,8 +169,26 @@ class Collision_Data():
         #for row in data:
 
         #return sections
-        print sections
-        return sections 
+        #print sections
+
+
+        """
+        sections = []
+        counter = 0
+        tmp_rows_len = len(tmp_array)
+        for r in range(rows):
+            sections.append([])
+            for i in range(columns):
+                sections[r].append("")
+            for i in range(height):
+                for c in range(columns):
+                    counter = counter + 1
+                    if (counter < (tmp_rows_len)):
+                        sections[r][c] = sections[r][c] + tmp_array[counter]
+                    else:
+                        pdb.set_trace()
+
+        """
 
 
 
@@ -215,11 +234,11 @@ class Collision_Data():
 
     def write_js(self, item):
         outfile = open("collision.js", 'w')
-        print >>outfile, "var collisionData = " + str(item) + ";"
+        print >>outfile, "var p2c = " + str(item) + ";"
         
     def write_py(self, item):
         outfile = open("collision.py", 'w')
-        print >>outfile, "collision_data = " + str(item)
+        print >>outfile, "p2c = " + str(item)
         
 
 """
@@ -236,7 +255,7 @@ collision = Collision_Data(sys.argv[1:])
 #print collision.to_line_array()
 #collision.write_js(collision.rip_raw_data("string", True))
 #collision.write_js(collision.to_sections(32))
-collision.write_py(collision.to_rects(32, 32))
+collision.write_js(collision.to_rects(32, 32))
 #collision.write_js(collision.rip_raw_data("row_array", False))
 #collision.write_py(collision.rip_raw_data("row_array", False))
 
