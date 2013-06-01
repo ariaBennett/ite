@@ -202,13 +202,6 @@ if (Meteor.isClient) {
     ct_cathedral_3_3 = new Image();
     ct_cathedral_3_4 = new Image();
     ct_cathedral_3_collision = new Image();
-    /*
-    imageBackground = new Image();
-    imageCTCathedralAboveNoPass = new Image();
-    imageCTCathedralAbovePass = new Image();
-    imageCTCathedralBelowNoPass = new Image();
-    imageCTCathedralBelowPass = new Image();
-    */
   }
 
   function canvasMainResourcesPreload () {
@@ -222,13 +215,8 @@ if (Meteor.isClient) {
     imageMainPlayer.src = "assets/test/magus_sheet_movement_small.png";
     imageFaun.src = "assets/Michael/CharacterModel-Faun128x256.png";
     imageCrystalBeast.src = "assets/Michael/crystalbeastpixeld384x192.png";
-    /*
-    imageBackground.src = "assets/test/ChronoTrigger600CathedralBG_Big.png";
-    imageCTCathedralAboveNoPass.src = "assets/zones/ct_cathedral/64x64/above_nopass/1.png"; 
-    imageCTCathedralAbovePass.src = "assets/zones/ct_cathedral/64x64/above_pass/1.png";
-    imageCTCathedralBelowNoPass.src = "assets/zones/ct_cathedral/64x64/below_nopass/1.png";
-    imageCTCathedralBelowPass.src = "assets/zones/ct_cathedral/64x64/below_pass/1.png";
-    */
+
+
   }
   
   function animationFrameSetup () {
@@ -257,6 +245,7 @@ if (Meteor.isClient) {
     canvasMainHeight = 270;
     offsetX = 0;
     offsetY = 0;
+
   }
 
   function disableSmoothing(ctx) {
@@ -725,6 +714,18 @@ if (Meteor.isClient) {
           ctxMain.strokeText(player.name.first, position[0], position[1]);
         }
       }
+      function drawTestCanvas(scale) {
+        // EaselJS test code below
+        var stageTest = new createjs.Stage("canvasTest");
+        stageTest.webkitImageSmoothingEnabled = false;
+        var testBitmap = new createjs.Bitmap(canvasMain);
+
+        testBitmap.scaleX = 4;
+        testBitmap.scaleY = 4;
+        stageTest.addChild(testBitmap);
+        stageTest.update();
+      }
+
       /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
       /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
       /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
@@ -740,6 +741,7 @@ if (Meteor.isClient) {
       drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
       drawCanvasDisplay(displayScale);
 
+      drawTestCanvas(displayScale);
       /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
       /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
       /* END DRAW CODE */ /* END DRAW CODE */ /* END DRAW CODE */
