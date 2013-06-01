@@ -715,15 +715,16 @@ if (Meteor.isClient) {
         }
       }
       function drawTestCanvas(scale) {
+        /*
         // EaselJS test code below
         var stageTest = new createjs.Stage("canvasTest");
-        stageTest.webkitImageSmoothingEnabled = false;
         var testBitmap = new createjs.Bitmap(canvasMain);
 
         testBitmap.scaleX = 4;
         testBitmap.scaleY = 4;
         stageTest.addChild(testBitmap);
         stageTest.update();
+        */
       }
 
       /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
@@ -1098,7 +1099,7 @@ if (Meteor.isServer) {
         }
       });
     },
-    addSection: function (area_id, areaName, column, row, x, y, sectionSize) {
+    addSection: function (area_id, areaName, column, row, x, y, sectionSize, sectionCollisionData) {
       Sections.insert({
         area_id: area_id,
         area_name: areaName,
@@ -1106,28 +1107,19 @@ if (Meteor.isServer) {
         row: row,
         x: x,
         y: y,
-        sectionSize: sectionSize
+        sectionSize: sectionSize,
+        collision: sectionCollisionData
       });
     },
-    generateSections: function (area_id, areaName, areaWidth, areaHeight, sectionSize) {
+    generateSections: function (area_id, areaName, areaWidth, areaHeight, sectionSize, areaCollisionData) {
       //var areaWidth = 640;
       //var areaHeight = 592;
       //var sectionSize = 32;
-      for (var column = 0; column * sectionSize < areaWidth; column++) {
-        for (var row = 0; row * sectionSize < areaHeight; row++) {
+      for (var row = 0; row < Math.ceil((areaHeight/sectionSize)); row++) {
+        for (var column = 0; column < Math.ceil((areaWidth/sectionSize)); column++) {
           Meteor.call("addSection", area_id, areaName, column, row,
-                      (column * sectionSize), (row * sectionSize), sectionSize);
-          /*
-          data[column][row] = {
-            column: column,
-            row: row,
-            pos: {
-              x: column * sectionSize,
-              y: row * sectionSize
-            },
-            sectionSize: sectionSize
-          };
-          */
+                      (column * sectionSize), (row * sectionSize), sectionSize,
+                      areaCollisionData[row][column]);
         }
       }
     },
@@ -1136,7 +1128,8 @@ if (Meteor.isServer) {
       _.each(areaDocArray, function(area){
         var area_id = Meteor.call("addArea", zone_id, zoneName, area.name, area.width,
                                   area.height, area.layersBelow, area.layersAbove);
-        Meteor.call("generateSections", area_id, area.name, area.width, area.height, sectionSize);
+        Meteor.call("generateSections", area_id, area.name, area.width, area.height, sectionSize, 
+                    area.collisionData);
       });
       return zone_id;
     }
@@ -1168,22 +1161,11 @@ if (Meteor.isServer) {
           layersAbove: [
             "ct_cathedral_3_1",
             "ct_cathedral_3_2"
-          ]
-        },
-        {
-          name: "ct_cathedral_test",
-          width: 1000,
-          height: 1000,
-          layersBelow: [
-            "ct_cathedral_3_3",
-            "ct_cathedral_3_4"
           ],
-          layersAbove: [
-            "ct_cathedral_3_1",
-            "ct_cathedral_3_2"
-          ]
+          collisionData: ct_cathedral_3_collision
         }
       ];
+      //console.log(ct_cathedral_3_collision[18][19]);
       Meteor.call("initZone", "ct_cathedral", areaDocs, 32);
     }
   });
