@@ -140,20 +140,17 @@ Meteor.methods({
       endRow =   Math.ceil((data.hitbox.collision.pos.y + data.hitbox.collision.size.y) / size) - 1;
     }
 
-    for (var col = startCol; col <= endCol; col++) {
-      for (var row = startRow; row <= endRow; row++) {
-        //console.log("row: " + row.toString() + "  col: " + col.toString());
-        Zones.update({
-          _id: zone._id,
-
-        }, 
-        {
-          $set: {data: []}
-        });
+    //TODO# THIS ONE
+    var sections = [];
+    for (var row = startRow; row <= endRow; row++) {
+      for (var col = startCol; col <= endCol; col++) {
+        sections.push(Meteor.call("getSection", data.area_id, col, row));
       }
     }
+    console.log(sections);
   },
-  removeData: function(data, zone) {
+  getSection: function(area_id, column, row) {
+    return Sections.findOne({area_id: area_id, column: column, row: row});
   }
 
 });
@@ -921,7 +918,7 @@ if (Meteor.isServer) {
         zone: {
           name: "ct_cathedral"
         },
-        section_ids: [starting_section_id],
+        area_id: starting_area_id,
         pos: {
           x: 200,
           y: 200,
@@ -1141,6 +1138,7 @@ if (Meteor.isServer) {
       user.profile = options.profile;
     if (!Players.findOne({"name.first": user.username})) {
       starting_section_id = Sections.findOne({area_name: "ct_cathedral_3", column: 0, row: 0})._id;
+      starting_area_id = Sections.findOne({area_name: "ct_cathedral_3"})._id;
       Meteor.call("createPlayer", user.username, starting_section_id);
     }
     return user;

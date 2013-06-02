@@ -146,11 +146,11 @@ class Collision_Data():
         for r in range(rows):
             sections.append([])
             for i in range(columns):
-                sections[r].append("")
+                sections[r].append([])
             for i in range(height):
                 for c in range(columns):
                     if (counter < (tmp_rows_len)):
-                        sections[r][c] = sections[r][c] + tmp_array[counter]
+                        sections[r][c].append(tmp_array[counter])
                     counter = counter + 1
 
 
@@ -256,6 +256,7 @@ collision = Collision_Data(sys.argv[1:])
 #collision.write_js(collision.rip_raw_data("string", True))
 #collision.write_js(collision.to_sections(32))
 collision.write_js(collision.to_rects(32, 32))
+collision.write_py(collision.to_rects(32, 32))
 #collision.write_js(collision.rip_raw_data("row_array", False))
 #collision.write_py(collision.rip_raw_data("row_array", False))
 
