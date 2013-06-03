@@ -58,7 +58,7 @@ Sections = new Meteor.Collection("sections");
 // Shared Methods
 Meteor.methods({
   updateHitboxes: function(id, type) {
-    if (type === "player") {
+    if (type === "players") {
       player = Players.findOne({_id: id});
       Players.update(id, {$set: {
         hitbox: {
@@ -99,7 +99,7 @@ Meteor.methods({
 
   incrementPlayerPosition: function(id, x, y, facing) {
     player = Players.findOne({_id: id});
-    zone = Zones.findOne({name: player.zone.name});
+    area = Areas.findOne({_id: player.area_id});
     oldX1 = player.hitbox.collision.pos.x;
     oldX2 = player.hitbox.collision.pos.x + player.hitbox.collision.size.x;
     oldY1 = player.hitbox.collision.pos.y;
@@ -108,13 +108,13 @@ Meteor.methods({
 
     // Screen Edges
 
-    if (oldX1 + x < 0 || oldX2 + x > zone.width) {
+    if (oldX1 + x < 0 || oldX2 + x > area.width) {
       x = 0;
     }
     else {
       Players.update(id, {$inc: {"pos.x": x}});
     }
-    if (oldY1 + y < 0 || oldY2 + y > zone.height) {
+    if (oldY1 + y < 0 || oldY2 + y > area.height) {
       y = 0;
     }
     else {
@@ -123,35 +123,10 @@ Meteor.methods({
 
     // Collision
     Players.update(id, {$set: {"animation.facing": facing}});
-    Meteor.call("updateHitboxes", id, "player");
-    Meteor.call("updateSections", player, "player", zone);
-  },
-
-  updateSections: function(data, catagory, zone) {
-    var startCol;
-    var startRow;
-    var endCol;
-    var endRow;
-    if (catagory === "player") {
-      var size = 32;
-      startCol = Math.floor((data.hitbox.collision.pos.x) / size);
-      startRow = Math.floor((data.hitbox.collision.pos.y) / size);
-      endCol =   Math.ceil((data.hitbox.collision.pos.x + data.hitbox.collision.size.x) / size) - 1;
-      endRow =   Math.ceil((data.hitbox.collision.pos.y + data.hitbox.collision.size.y) / size) - 1;
-    }
-
-    //TODO# THIS ONE
-    var sections = [];
-    for (var row = startRow; row <= endRow; row++) {
-      for (var col = startCol; col <= endCol; col++) {
-        sections.push(Meteor.call("getSection", data.area_id, col, row));
-      }
-    }
-    console.log(sections);
-  },
-  getSection: function(area_id, column, row) {
-    return Sections.findOne({area_id: area_id, column: column, row: row});
+    Meteor.call("updateSections", player, "players");
+    Meteor.call("updateHitboxes", id, "players");
   }
+
 
 });
 
@@ -174,8 +149,8 @@ if (Meteor.isClient) {
         if (getPlayer = Players.findOne({"name.first": Meteor.user().username})) {
           playerCurrent_id = getPlayer._id;
           playerCurrent = getPlayer;
-          playerCurrentArea_id = (Sections.findOne({_id: playerCurrent.section_ids[0]})).area_id;
-          playerCurrentArea = Areas.findOne({_id: playerCurrentArea_id});
+          playerCurrentArea = Areas.findOne({_id: playerCurrent.area_id});
+          playerCurrentArea_id = playerCurrentArea._id;
           playerCurrentZone = Zones.findOne({_id: playerCurrentArea.zone_id});
           playersInArea = Players.find({"zone.name": getPlayer.zone.name, "online": "true"},
             {sort: {"hitbox.layering.pos.y": 1}}, {sort: {"pos.z": 1}}).fetch();
@@ -1105,7 +1080,8 @@ if (Meteor.isServer) {
         x: x,
         y: y,
         sectionSize: sectionSize,
-        collision: sectionCollisionData
+        collision: sectionCollisionData,
+        players: []
       });
     },
     generateSections: function (area_id, areaName, areaWidth, areaHeight, sectionSize, areaCollisionData) {
@@ -1129,7 +1105,70 @@ if (Meteor.isServer) {
                     area.collisionData);
       });
       return zone_id;
+    },
+
+    // #Begin Meteor functions that handle section updates.
+    updateSections: function(data, catagory) {
+      var startCol;
+      var startRow;
+      var endCol;
+      var endRow;
+      if (catagory === "players") {
+        var size = 32;
+        startRow = Math.floor((data.hitbox.collision.pos.y) / size);
+        endRow =   Math.ceil((data.hitbox.collision.pos.y + data.hitbox.collision.size.y) / size) - 1;
+        startCol = Math.floor((data.hitbox.collision.pos.x) / size);
+        endCol =   Math.ceil((data.hitbox.collision.pos.x + data.hitbox.collision.size.x) / size) - 1;
+        
+        // Remove the player's ids from old sections, then update the player's sections
+        // to current, then add the players id to the new sections
+        Meteor.call("removeDataSections", data.section_ids, catagory, data._id);
+        Meteor.call("updatePlayerSections", data._id, Meteor.call("getSections", data.area_id, startRow, endRow, startCol, endCol));
+        Meteor.call("addDataSections", data.section_ids, catagory, data._id);
+      }
+
+    },
+    getSections: function(area_id, startRow, endRow, startCol, endCol) {
+      var section_ids = [];
+      for (var row = startRow; row <= endRow; row++) {
+        for (var col = startCol; col <= endCol; col++) {
+          //TODO section_id retrieval is broken.
+          var sec = Meteor.call("getSection", area_id, col, row);
+          // #here
+          section_ids.push(sec._id);
+        }
+      }
+      return section_ids;
+    },
+    getSection: function(area_id, column, row) {
+      return Sections.findOne({area_id: area_id, column: column, row: row});
+    },
+    updatePlayerSections: function(player_id, section_ids) {
+      Players.update(player_id, {$set: {section_ids: section_ids}});
+    },
+    addDataSections: function(section_ids, catagory, data_id) {
+      if (catagory === "players") {
+        _.each(section_ids, function(sec_id) {
+          console.log(sec_id);
+          Sections.update(sec_id, {$push: {players: data_id}});
+        });
+      }
+    },
+    removeDataSections: function(section_ids, catagory, data_id) {
+      if (catagory === "players") {
+        _.each(section_ids, function(sec_id) { 
+          var updated_array = [];
+          var section = Sections.findOne(sec_id);
+          _.each(section.players, function (player_id) {
+            if (player_id !== data_id) {
+              updated_array.push(player_id);
+            }
+          });
+          Sections.update(sec_id, {players: updated_array});
+        });
+      }
     }
+    // #End Meteor functions that handle section updates.
   });
 
   Accounts.onCreateUser(function(options, user) {
@@ -1138,7 +1177,7 @@ if (Meteor.isServer) {
       user.profile = options.profile;
     if (!Players.findOne({"name.first": user.username})) {
       starting_section_id = Sections.findOne({area_name: "ct_cathedral_3", column: 0, row: 0})._id;
-      starting_area_id = Sections.findOne({area_name: "ct_cathedral_3"})._id;
+      starting_area_id = Areas.findOne({name: "ct_cathedral_3"})._id;
       Meteor.call("createPlayer", user.username, starting_section_id);
     }
     return user;
