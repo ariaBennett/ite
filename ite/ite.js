@@ -191,9 +191,18 @@ Meteor.methods({
   },
   // #End Meteor functions that handle section updates.
  
+  //on 
+  sliceDesired: function(array, startX, startY, endX, endY) {
+  },
   isCollisionX: function(player) {
     var playerSections = Sections.find({players: player._id}).fetch();
-    console.log(playerSections);
+    
+   _.each(playerSections, function(section) {
+     for (var i = 0; i < (section.collision).length; i++) {
+       console.log(i);
+     }
+   });
+
   },
   isCollisionY: function() {
   }
