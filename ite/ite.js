@@ -59,6 +59,7 @@ Sections = new Meteor.Collection("sections");
 Meteor.methods({
   updateHitboxes: function(id, type) {
     if (type === "players") {
+      //#subs
       player = Players.findOne({_id: id});
       Players.update(id, {$set: {
         hitbox: {
@@ -99,7 +100,9 @@ Meteor.methods({
 
   incrementPlayerPosition: function(id, incX, incY, facing) {
     //#TODO make these non-global
+    ////#subs
     var player = Players.findOne({_id: id});
+    //#subs
     var area = Areas.findOne({_id: player.area_id});
     var startX = player.hitbox.collision.pos.x;
     var endX = player.hitbox.collision.pos.x + player.hitbox.collision.size.x;
@@ -110,6 +113,7 @@ Meteor.methods({
 
     // Screen Edges
 
+    //#TODO isCollision is empty
     if (startX + incX < 0 || endX + incX > area.width || 
       Meteor.call("isCollisionX", player) === true) {
       incX = 0;
@@ -126,8 +130,13 @@ Meteor.methods({
 
     Players.update(id, {$set: {"animation.facing": facing}});
     // Collision
+    //#TTEST 1-60ms?
     Meteor.call("updateHitboxes", id, "players");
+    //#TTEST 1-60ms?\\
+    //#TTEST 50-100ms?
+    ////#subs
     Meteor.call("updateSections", player, "players", area.sectionSize);
+    //#TTEST 50-100ms?\\
   },
   // #Begin Meteor functions that handle section updates.
   updateSections: function(data, catagory, sectionSize) {
@@ -155,6 +164,8 @@ Meteor.methods({
     var section_ids = [];
     for (var row = startRow; row <= endRow; row++) {
       for (var col = startCol; col <= endCol; col++) {
+        //TODO Make player doc's section_id's more in 
+        //line with the zone and area on the player doc.
         var section = Meteor.call("getSection", area_id, col, row);
         section_ids.push(section);
       }
@@ -162,6 +173,7 @@ Meteor.methods({
     return section_ids;
   },
   getSection: function(area_id, column, row) {
+    //#subs
     var section = Sections.findOne({area_id: area_id, column: column, row: row});
     return section._id;
   },
@@ -171,6 +183,7 @@ Meteor.methods({
   addDataSections: function(section_ids, catagory, data_id) {
     if (catagory === "players") {
       _.each(section_ids, function(section_id) {
+        //#subs
         Sections.update(section_id, {$push: {players: data_id}});
       });
     }
@@ -178,14 +191,16 @@ Meteor.methods({
   removeDataSections: function(section_ids, catagory, data_id) {
     if (catagory === "players") {
       _.each(section_ids, function(section_id) { 
-        var updated_array = [];
+        var updatedArray = [];
+        //#subs
         var section = Sections.findOne(section_id);
         _.each(section.players, function (player_id) {
           if (player_id !== data_id) {
-            updated_array.push(player_id);
+            updatedArray.push(player_id);
           }
         });
-        Sections.update(section_id, {$set: {players: updated_array}});
+        //#subs
+        Sections.update(section_id, {$set: {players: updatedArray}});
       });
     }
   },
@@ -195,13 +210,15 @@ Meteor.methods({
   sliceDesired: function(array, startX, startY, endX, endY) {
   },
   isCollisionX: function(player) {
+    return false;
+    /*
     var playerSections = Sections.find({players: player._id}).fetch();
     
    _.each(playerSections, function(section) {
      for (var i = 0; i < (section.collision).length; i++) {
-       console.log(i);
      }
    });
+     */
 
   },
   isCollisionY: function() {
@@ -294,14 +311,19 @@ if (Meteor.isClient) {
     Session.set("isDebug", "0");
     Deps.autorun ( function () {
       if (Meteor.user()) {
-        if (getPlayer = Players.findOne({"name.first": Meteor.user().username})) {
-          playerCurrent_id = getPlayer._id;
-          playerCurrent = getPlayer;
+        Meteor.subscribe("getPlayerIdFromUserId", Meteor.user()._id);
+        //#subs
+        //TODO seperate getPlayer so it gets specific characters
+        //from an account instead of "account as character"
+        if (Players.findOne({"account._id": Meteor.user()._id})) {
+          playerCurrentId = Players.findOne({"account._id": Meteor.user()._id})._id;
+          Meteor.subscribe("getPlayerZone", playerCurrentId);
+          Meteor.subscribe("getPlayerArea", playerCurrentId);
+          Meteor.subscribe("getPlayerLocation", playerCurrentId);
+          playerCurrentZone = Zones.findOne({_id: playerCurrent.zone_id});
           playerCurrentArea = Areas.findOne({_id: playerCurrent.area_id});
-          playerCurrentArea_id = playerCurrentArea._id;
-          playerCurrentZone = Zones.findOne({_id: playerCurrentArea.zone_id});
-          playersInArea = Players.find({"zone.name": getPlayer.zone.name, "online": "true"},
-            {sort: {"hitbox.layering.pos.y": 1}}, {sort: {"pos.z": 1}}).fetch();
+          Meteor.subscribe("getPlayersInArea", playerCurrentArea._id);
+          playersInArea = Players.find({"area_id": playerCurrentArea._id});
         }
       }
       if (!Meteor.user()) {
@@ -1016,286 +1038,4 @@ if (Meteor.isClient) {
   Meteor.startup(attachControls);
   Meteor.startup(tryMovement);
   // Meteor.startup(debugReport);
-}
-
-// Server
-if (Meteor.isServer) {
-
-  Meteor.methods({
-    // Server Meteor.methods
-    createPlayer: function (name, starting_section_id) {
-      var startingX = 200;
-      var startingY = 200;
-      var p_id = Players.insert( {
-        account: {
-          region: "North America",
-        },
-        server: "alpha",
-        online: "true",
-        name: {
-          prefix: "",
-          first: name,
-          last: "",
-          suffix: ""
-        },
-        //TODO# Pull other players from sections instead of
-        //faking it with temporary zone stand in
-        zone: {
-          name: "ct_cathedral"
-        },
-        area_id: starting_area_id,
-        pos: {
-          x: startingX,
-          y: startingY,
-          z: 0
-        },
-        hitbox: {
-          collision: {
-            pos: {
-              x: startingX,
-              y: startingY
-            },
-            size: {
-              x: 16,
-              y: 16
-            }
-          },
-          layering: {
-            pos: {
-              x: 0,
-              y: 0
-            },
-            size: {
-              x: 1,
-              y: 1
-            }
-          },
-          focus: {
-            pos: {
-              x: 0,
-              y: 0 
-            },
-            size: {
-              x: 1,
-              y: 1
-            }
-          }
-        },
-        sprite: {
-          name: "imageMainPlayer",
-          size: {
-            source: {
-              x: 32,
-              y: 32
-            },
-            display: {
-              x: 32,
-              y: 32
-            }
-          },
-          point: {
-            bottom: {
-              center: {
-                x: 16,
-                y: 32
-              }
-            }
-          },
-          slice: {
-            left: {
-              x: 0,
-              y: 0
-            },
-            up: {
-              x: 32,
-              y: 0
-            },
-            right: {
-              x: 64,
-              y: 0
-            },
-            down: {
-              x: 96,
-              y: 0
-            }
-          }
-        },
-        animation: {
-          name: "running",
-          facing: "down"
-        },        
-        appearance: {
-          hair: "",
-          face: "",
-          eyes: "",
-          skin: "",
-          body: ""
-        },
-        equipment: {
-          // Weapons
-          rhand: "",
-          lhand: "",
-          // Clothes
-          head: "",
-          chest: "",
-          shoulders: "",
-          arms: "",
-          hands: "",
-          legs: "",
-          feet: "",
-          // Jewelry
-          necklace: "",
-          rring: "",
-          lring: ""
-        },
-        items: {
-          inventory: {
-            consumables: [""],
-            equipment: [""],
-            food: [""]
-          },
-          bank: {
-            consumable: [""],
-            equipable: [""],
-            food: [""]
-          },
-          account: [""],
-          story: [""]
-        },
-        entryEnd: "entryEnd"
-      });                              
-      Meteor.call("updateSections", Players.findOne(p_id), "players");
-    },
-
-
-    changePlayerSprite: function (id, name, sizeSource, sizeDisplay, slice) {
-      Players.update(id, {$set: { 
-        sprite: {
-          name: name,
-          size: {
-            source: {
-              x: sizeSource[0], 
-              y: sizeSource[1]
-            },
-            display: {
-              x: sizeDisplay[0], 
-              y: sizeDisplay[1]
-            }
-          },
-          slice: {
-            left: {
-              x: slice[0[0]],
-              y: slice[0[1]]
-            },
-            up: {
-              x: slice[1[0]],
-              y: slice[1[1]]
-            },
-            right: {
-              x: slice[2[0]],
-              y: slice[2[1]]
-            },
-            down: {
-              x: slice[3[0]],
-              y: slice[3[1]]
-            }
-          }
-        }
-      }});
-    },
-
-    addZone: function (name) {
-      return Zones.insert({name: name});
-    },
-    addArea: function (zone_id, zone_name, name, width, height, layersBelow, layersAbove, sectionSize) {
-      return Areas.insert({
-        zone_id: zone_id,
-        // #TODO: decide on a variable naming convention and
-        // update accordingly
-        zone_name: zone_name,
-        name: name,
-        width: width,
-        height: height,
-        sectionSize: sectionSize, 
-        // TODO# handle layers as sections instead
-        // of areas.
-        layers: {
-          below: layersBelow,
-          above: layersAbove
-        }
-      });
-    },
-    addSection: function (area_id, areaName, column, row, startX, startY, sectionSize, sectionCollisionData) {
-      Sections.insert({
-        area_id: area_id,
-        area_name: areaName,
-        column: column,
-        row: row,
-        startX: startX,
-        startY: startY,
-        sectionSize: sectionSize,
-        collision: sectionCollisionData,
-        players: []
-      });
-    },
-    generateSections: function (area_id, areaName, areaWidth, areaHeight, sectionSize, areaCollisionData) {
-      //var areaWidth = 640;
-      //var areaHeight = 592;
-      //var sectionSize = 32;
-      for (var row = 0; row < Math.ceil((areaHeight/sectionSize)); row++) {
-        for (var column = 0; column < Math.ceil((areaWidth/sectionSize)); column++) {
-          Meteor.call("addSection", area_id, areaName, column, row,
-                      (column * sectionSize), (row * sectionSize), sectionSize,
-                      areaCollisionData[row][column]);
-        }
-      }
-    },
-    initZone: function (zoneName, areaDocs) {
-      var zone_id = Meteor.call("addZone", zoneName);
-      _.each(areaDocs, function(area){
-        var area_id = Meteor.call("addArea", zone_id, zoneName, area.name, area.width,
-                                  area.height, area.layersBelow, area.layersAbove, area.sectionSize);
-        Meteor.call("generateSections", area_id, area.name, area.width, area.height, area.sectionSize, 
-                    area.collisionData);
-      });
-      return zone_id;
-    }
-  });
-
-  Accounts.onCreateUser(function(options, user) {
-    // Server Accounts Config
-    if (options.profile)
-      user.profile = options.profile;
-    if (!Players.findOne({"name.first": user.username})) {
-      starting_section_id = Sections.findOne({area_name: "ct_cathedral_3", column: 0, row: 0})._id;
-      starting_area_id = Areas.findOne({name: "ct_cathedral_3"})._id;
-      Meteor.call("createPlayer", user.username, starting_section_id);
-    }
-    return user;
-  });
-
-  Meteor.startup(function () {
-    // Init Zones
-    if (!Zones.findOne({"name": "ct_cathedral"})) {
-      var areaDocs = [
-        {
-          name: "ct_cathedral_3",
-          width: 640,
-          height: 592,
-          sectionSize: 32,
-          layersBelow: [
-            "ct_cathedral_3_3",
-            "ct_cathedral_3_4"
-          ],
-          layersAbove: [
-            "ct_cathedral_3_1",
-            "ct_cathedral_3_2"
-          ],
-          collisionData: ct_cathedral_3_collision
-        }
-      ];
-      //console.log(ct_cathedral_3_collision[18][19]);
-      Meteor.call("initZone", "ct_cathedral", areaDocs);
-    }
-  });
 }

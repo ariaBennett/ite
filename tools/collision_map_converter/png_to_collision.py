@@ -12,15 +12,48 @@ class Collision_Data():
         self.source_png_path = source_png_path
 
     def rip_raw_data(self, data_type, include_helper_data):
+        """
+        At some point it might be necessary to refer to this
+        key to determine what output a given source pixel
+        color converts to.
+
+        Key: (R, G, B, A) | Symbol | Meaning
+        
+
+        For now, only one band is used to generate data.  
+        Would take some degree of implementation to 
+        generate data using four bands.
+        
+        """
+
         for inpath in self.source_png_path:
             try:
                 im = Image.open(inpath)
                 im.load()
                 source = im.split()
                 R, G, B, A = 0, 1, 2, 3
-                mask = source[A].point(lambda i: i > 0 and 255)
-                out = source[A].point(lambda i: 1)
-                source[A].paste(out, None, mask)
+
+                wall_char = "1"
+                empty_char = "0"
+
+
+                
+                def band_to_nums(source, band, num_zero, num_one):
+
+                    # zero
+                    mask = source[band].point(lambda i: i == 0)
+                    out = source[band].point(lambda i: num_zero)
+                    source[band].paste(out, None, mask)
+
+                    # one
+                    mask = source[band].point(lambda i: i > 0 and 255)
+                    out = source[band].point(lambda i: num_one)
+                    source[band].paste(out, None, mask)
+
+                    return source
+
+                source = band_to_nums(source, A, 0, 1)
+
 
                 if data_type == "array":
                     constructor = []
@@ -32,7 +65,10 @@ class Collision_Data():
                     for y in range(im.size[1]):
                         row = ""
                         for x in range(im.size[0]):
-                            row = row + str((source[A].getdata())[(im.size[0] * y) + x])
+                            if ((source[A].getdata())[(im.size[0] * y) + x]) == 0:
+                                row = row + str(empty_char)
+                            if ((source[A].getdata())[(im.size[0] * y) + x]) == 1:
+                                row = row + str(wall_char)
                         constructor.append(row)
 
                 elif data_type == "string":
@@ -156,76 +192,6 @@ class Collision_Data():
 
 
         return sections 
-
-        #print counter
-        #print sections
-        """
-        print tmp_rows_len
-        print sections
-        """
-        #print tmp_array
-
-
-        #for row in data:
-
-        #return sections
-        #print sections
-
-
-        """
-        sections = []
-        counter = 0
-        tmp_rows_len = len(tmp_array)
-        for r in range(rows):
-            sections.append([])
-            for i in range(columns):
-                sections[r].append("")
-            for i in range(height):
-                for c in range(columns):
-                    counter = counter + 1
-                    if (counter < (tmp_rows_len)):
-                        sections[r][c] = sections[r][c] + tmp_array[counter]
-                    else:
-                        pdb.set_trace()
-
-        """
-
-
-
-
-
-
-
-
-
-
-        """
-            for i in range(columns):
-                sec_row = ""
-                for j in range(width):
-                    pass
-                    #sec_row = sec_row + row[(i * width) + j]
-                #print sec_row
-                """
-
-
-
-        """
-        columns_rows = self.get_columns_rows(data[1][0], data[1][1], width, height)
-
-        for row in range(columns_rows[1]):
-            constructor.append([])
-
-            for column in range(columns_rows[0]):
-                constructor[row].append([])
-
-                for i in range(height):
-                    for j in range(width):
-                        constructor[row][column] = constructor[row][column] + 1 
-
-
-        return constructor 
-        """
 
     def get_columns_rows(self, width, height, section_width, section_height):
         columns = int(math.ceil(float(width)/float(section_width)))
