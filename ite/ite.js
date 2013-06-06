@@ -55,247 +55,6 @@ Zones = new Meteor.Collection("zones");
 Areas = new Meteor.Collection("areas");
 Sections = new Meteor.Collection("sections");
 
-// Shared Methods
-Meteor.methods({
-  updateHitboxes: function(id, type) {
-    if (type === "players") {
-      //#subs
-      player = Players.findOne({_id: id});
-      Players.update(id, {$set: {
-        hitbox: {
-          collision: {
-            pos: {
-              x: player.pos.x + player.sprite.size.display.x/2 - player.hitbox.collision.size.x/2,
-              y: player.pos.y + player.sprite.size.display.y - player.hitbox.collision.size.y
-            },
-            size: {
-              x: 16,
-              y: 16
-            }
-          },
-          layering: {
-            pos: {
-              x: player.pos.x,
-              y: player.pos.y + player.sprite.size.display.y
-            },
-            size: {
-              x: player.sprite.size.display.x,
-              y: 1
-            }
-          },
-          focus: {
-            pos: {
-              x: player.pos.x + player.sprite.size.display.x/2,
-              y: player.pos.y + player.sprite.size.display.y - player.hitbox.collision.size.y/2
-            },
-            size: {
-              x: 1,
-              y: 1
-            }
-          }
-        }
-      }});
-    }
-  },
-
-  incrementPlayerPosition: function(id, incX, incY, facing) {
-    //#TODO make these non-global
-    ////#subs
-    var player = Players.findOne({_id: id});
-    //#subs
-    var area = Areas.findOne({_id: player.area_id});
-    var startX = player.hitbox.collision.pos.x;
-    var endX = player.hitbox.collision.pos.x + player.hitbox.collision.size.x;
-    var startY = player.hitbox.collision.pos.y;
-    var endY = player.hitbox.collision.pos.y + player.hitbox.collision.size.y;
-
-    // Exceptions first, else do increment.
-
-    // Screen Edges
-
-    //#TODO isCollision is empty
-    if (startX + incX < 0 || endX + incX > area.width || 
-      Meteor.call("isCollisionX", player) === true) {
-      incX = 0;
-    }
-    else {
-      Players.update(id, {$inc: {"pos.x": incX}});
-    }
-    if (startY + incY < 0 || endY + incY > area.height) {
-      incY = 0;
-    }
-    else {
-      Players.update(id, {$inc: {"pos.y": incY}});
-    }
-
-    Players.update(id, {$set: {"animation.facing": facing}});
-    // Collision
-    //#TTEST 1-60ms?
-    Meteor.call("updateHitboxes", id, "players");
-    //#TTEST 1-60ms?\\
-    //#TTEST 50-100ms?
-    ////#subs
-    Meteor.call("updateSections", player, "players", area.sectionSize);
-    //#TTEST 50-100ms?\\
-  },
-  // #Begin Meteor functions that handle section updates.
-  updateSections: function(data, catagory, sectionSize) {
-      
-    if (catagory === "players") {
-      // Remove the player's ids from old sections, then update the player's sections
-      // to current, then add the players id to the new sections
-      Meteor.call("removeDataSections", data.section_ids, catagory, data._id);
-      var new_section_ids = Meteor.call("getSections", data.area_id, sectionSize,
-                                                       data.hitbox.collision.pos.x, 
-                                                       data.hitbox.collision.size.x, 
-                                                       data.hitbox.collision.pos.y, 
-                                                       data.hitbox.collision.size.y);
-      Meteor.call("updatePlayerSections", data._id, new_section_ids);
-      Meteor.call("addDataSections", new_section_ids, catagory, data._id);
-    }
-
-  },
-  getSections: function(area_id, sectionSize, posX, sizeX, posY, sizeY) {
-    var startRow = Math.floor((posY) / sectionSize);
-    var endRow =   Math.ceil((posY + sizeY) / sectionSize) - 1;
-    var startCol = Math.floor((posX) / sectionSize);
-    var endCol =   Math.ceil((posX + sizeX) / sectionSize) - 1;
-    
-    var section_ids = [];
-    for (var row = startRow; row <= endRow; row++) {
-      for (var col = startCol; col <= endCol; col++) {
-        //TODO Make player doc's section_id's more in 
-        //line with the zone and area on the player doc.
-        var section = Meteor.call("getSection", area_id, col, row);
-        section_ids.push(section);
-      }
-    }
-    return section_ids;
-  },
-  getSection: function(area_id, column, row) {
-    //#subs
-    var section = Sections.findOne({area_id: area_id, column: column, row: row});
-    return section._id;
-  },
-  updatePlayerSections: function(player_id, section_ids) {
-    Players.update(player_id, {$set: {section_ids: section_ids}});
-  },
-  addDataSections: function(section_ids, catagory, data_id) {
-    if (catagory === "players") {
-      _.each(section_ids, function(section_id) {
-        //#subs
-        Sections.update(section_id, {$push: {players: data_id}});
-      });
-    }
-  },
-  removeDataSections: function(section_ids, catagory, data_id) {
-    if (catagory === "players") {
-      _.each(section_ids, function(section_id) { 
-        var updatedArray = [];
-        //#subs
-        var section = Sections.findOne(section_id);
-        _.each(section.players, function (player_id) {
-          if (player_id !== data_id) {
-            updatedArray.push(player_id);
-          }
-        });
-        //#subs
-        Sections.update(section_id, {$set: {players: updatedArray}});
-      });
-    }
-  },
-  // #End Meteor functions that handle section updates.
- 
-  //on 
-  sliceDesired: function(array, startX, startY, endX, endY) {
-  },
-  isCollisionX: function(player) {
-    return false;
-    /*
-    var playerSections = Sections.find({players: player._id}).fetch();
-    
-   _.each(playerSections, function(section) {
-     for (var i = 0; i < (section.collision).length; i++) {
-     }
-   });
-     */
-
-  },
-  isCollisionY: function() {
-  }
-});
-
-    /*
-    if (incX < 0) {
-      // startX, startY, startX, endY
-      posX = startX + incX;
-      sizeX = incX;
-      posY = endY;
-      sizeY = endY - startY;
-      var section_ids = Meteor.call(
-          "getSections", area_id, sectionSize,
-                         posX, sizeX, posY, sizeY 
-          );
-
-      var subStartX = (startX + incX) % sectionSize;
-      var subStartY = startY % sectionSize;
-      var subEndX = (startX) % sectionSize;
-      var subEndY = endY % sectionSize;
-      var sections; 
-
-    }
-  },
-  */
-    /*
-    if (inc < 0) {
-      // startX, startY, startX, endY
-      sections = Sections.find({
-        $and: [{x: {$gte: startX - inc}, y: {$gte: startY}}], 
-        $and: [{x: {$gte: startX - inc}, y: {$lte: endY}}],
-        $and: [{x: {$lte: endX}, y: {$gte: startY}}],
-        $and: [{x: {$lte: endX}, y: {$lte: endY}}]
-      }).fetch();
-      console.log(sections);{
-            updated_array.push(player_id);
-          }
-        });
-        Sections.update(section_id, {$set: {players: updated_array}});
-      });
-    }
-  },
-  // #End Meteor functions that handle section updates.
- 
-  isCollisionX: function(player) {
-
-    var sectionCollection = player.section_ids;
-     var newSectionCollection = [];
-    _.each(player.section_ids, function (sec_id) {
-      var section = Sections.findOne(sec_id);
-      newSectionCollection.push(section);      
-    });
-      console.log(sectionCollection);
-    
-  },
-
-    }
-    else if (inc > 0) {
-    }
-    else {
-      return false;
-    }
-    */
-    /*
-      var size = 32;
-      for (var i = 1; i <= inc; i++)
-      var topRowOrigin = Math.floor((startY - i) / size);
-      var topRowDestination = Math.floor((startY - inc) / size);
-      var endRow =   Math.ceil((data.hitbox.collision.pos.y + data.hitbox.collision.size.y) / size) - 1;
-      var startCol = Math.floor((data.hitbox.collision.pos.x) / size);
-      var endCol =   Math.ceil((data.hitbox.collision.pos.x + data.hitbox.collision.size.x) / size) - 1;
-
-    return false;
-    */
-
 // Client
 if (Meteor.isClient) {
 
@@ -311,24 +70,24 @@ if (Meteor.isClient) {
     Session.set("isDebug", "0");
     Deps.autorun ( function () {
       if (Meteor.user()) {
-        Meteor.subscribe("getPlayerIdFromUserId", Meteor.user()._id);
-        //#subs
-        //TODO seperate getPlayer so it gets specific characters
-        //from an account instead of "account as character"
-        if (Players.findOne({"account._id": Meteor.user()._id})) {
-          playerCurrentId = Players.findOne({"account._id": Meteor.user()._id})._id;
-          Meteor.subscribe("getPlayerZone", playerCurrentId);
-          Meteor.subscribe("getPlayerArea", playerCurrentId);
-          Meteor.subscribe("getPlayerLocation", playerCurrentId);
-          playerCurrentZone = Zones.findOne({_id: playerCurrent.zone_id});
-          playerCurrentArea = Areas.findOne({_id: playerCurrent.area_id});
-          Meteor.subscribe("getPlayersInArea", playerCurrentArea._id);
-          playersInArea = Players.find({"area_id": playerCurrentArea._id});
-        }
+        // Meteor Function Calls to get Data and Happiness
+        Meteor.call("getPlayerCurrent", Meteor.user()._id, 
+          function (error, result) {
+            Session.set("playerCurrent", result);
+        });
+        Meteor.call("getPlayersInArea", Session.get("playerCurrent").area_id, 
+          function (error, result) {
+            Session.set("playersInArea", result);
+        });
+        Meteor.call("getArea", Session.get("playerCurrent").area_id, 
+          function (error, result) {
+            Session.set("areaCurrent", result);
+        });
       }
       if (!Meteor.user()) {
-        playerCurrent_id = "";
-        playersInArea = "";
+        Session.set("playerCurrent", "");
+        Session.set("playersInArea", "");
+        Session.set("areaCurrent", "");
       }
     });
   }
@@ -404,7 +163,7 @@ if (Meteor.isClient) {
 
   function drawCanvasMain() {
     // Draw updates to the main game canvas
-    if (canvasMain.getContext && playerCurrent_id) {
+    if (canvasMain.getContext && Session.get("playerCurrent")._id) {
 
       function getDisplayScale() {
         var gameWidth =  window.innerWidth; 
@@ -567,11 +326,11 @@ if (Meteor.isClient) {
         else if (x < canvasMainWidth/2) {
           return x;
         }
-        else if (x < playerCurrentArea.width - canvasMainWidth/2) {
+        else if (x < Session.get("areaCurrent").width - canvasMainWidth/2) {
           return canvasMainWidth/2;
         }
-        else if (x <= playerCurrentArea.width) {
-          return canvasMainWidth - (playerCurrentArea.width - x);
+        else if (x <= Session.get("areaCurrent").width) {
+          return canvasMainWidth - (Session.get("areaCurrent").width - x);
         }
       }
       function getFocusY (y) {
@@ -581,11 +340,11 @@ if (Meteor.isClient) {
         else if (y < canvasMainHeight/2) {
           return y;
         }
-        else if (y < playerCurrentArea.height - canvasMainHeight/2) {
+        else if (y < Session.get("areaCurrent").height - canvasMainHeight/2) {
           return canvasMainHeight/2;
         }
-        else if (y <= playerCurrentArea.height) {
-          return canvasMainHeight - (playerCurrentArea.height - y);
+        else if (y <= Session.get("areaCurrent").height) {
+          return canvasMainHeight - (Session.get("areaCurrent").height - y);
         }
       }
       function drawFocus(player) {
@@ -669,7 +428,7 @@ if (Meteor.isClient) {
 
         if (relation === "below") {
           _.each(players, function (player) {
-            if (playerCurrent_id !== player._id && 
+            if (Session.get("playerCurrent")._id !== player._id && 
                 player.hitbox.layering.pos.y <= layeringPointY) {
               // Temporary player animation
               var playerSliceX = 0;
@@ -709,7 +468,7 @@ if (Meteor.isClient) {
         }
         else if (relation === "above") {
           _.each(players, function (player) {
-            if (playerCurrent_id !== player._id && 
+            if (Session.get("playerCurrent")._id !== player._id && 
                 player.hitbox.layering.pos.y > relationalObject.hitbox.layering.pos.y) {
               // Temporary player animation
               var playerSliceX = 0;
@@ -750,7 +509,7 @@ if (Meteor.isClient) {
         }
         else if (relation === "both") {
           _.each(players, function (player) {
-            if (playerCurrent_id !== player._id) {
+            if (Session.get("playerCurrent")._id !== player._id) {
               // Temporary player animation
               var playerSliceX = 0;
               var playerSliceY = 0;
@@ -788,7 +547,7 @@ if (Meteor.isClient) {
         x = posX;
         y = posY;
         
-        if (playerCurrent_id) {
+        if (Session.get("playerCurrent")._id) {
 
           function getViewX (image) {
             if (x <= 0)
@@ -796,11 +555,11 @@ if (Meteor.isClient) {
             else if (x < canvasMainWidth/2) {
                 return 0;
             }
-            else if (x < playerCurrentArea.width - canvasMainWidth/2) {
+            else if (x < Session.get("areaCurrent").width - canvasMainWidth/2) {
               return x - canvasMainWidth/2;
             }
-            else if (x >= playerCurrentArea.width - canvasMainWidth/2) {
-              return playerCurrentArea.width - canvasMainWidth; 
+            else if (x >= Session.get("areaCurrent").width - canvasMainWidth/2) {
+              return Session.get("areaCurrent").width - canvasMainWidth; 
             }
           }
 
@@ -810,11 +569,11 @@ if (Meteor.isClient) {
             else if (y < canvasMainHeight/2) {
                 return 0;
             }
-            else if (y < playerCurrentArea.height - canvasMainHeight/2) {
+            else if (y < Session.get("areaCurrent").height - canvasMainHeight/2) {
               return y - canvasMainHeight/2;
             }
-            else if (y >= playerCurrentArea.height - canvasMainHeight/2) {
-              return playerCurrentArea.height - canvasMainHeight; 
+            else if (y >= Session.get("areaCurrent").height - canvasMainHeight/2) {
+              return Session.get("areaCurrent").height - canvasMainHeight; 
             }
           }
 
@@ -822,8 +581,8 @@ if (Meteor.isClient) {
             ctxMain.drawImage(image, 
               -getViewX(image),
               -getViewY(image),
-              playerCurrentArea.width,
-              playerCurrentArea.height);
+              Session.get("areaCurrent").width,
+              Session.get("areaCurrent").height);
           }
 
           if (relation === "below") {
@@ -869,19 +628,20 @@ if (Meteor.isClient) {
         */
       }
 
+
+
       /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
       /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
       /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */ /* BEGIN DRAW CODE */
       var displayScale = getDisplayScale();
-
       clearCanvas(0, 0, canvasMainWidth, canvasMainHeight);
       // clearCanvasData();
-      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "below");
-      //drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "collision");
-      drawPlayersOther(playersInArea, playerCurrent, "below");
-      drawFocus(playerCurrent);  // Draw the current player
-      drawPlayersOther(playersInArea, playerCurrent, "above");
-      drawEnviroment(playerCurrent.pos.x, playerCurrent.pos.y, "above");
+      drawEnviroment(Session.get("playerCurrent").pos.x, Session.get("playerCurrent").pos.y, "below");
+      //drawEnviroment(Session.get("playerCurrent").pos.x, Session.get("playerCurrent").pos.y, "collision");
+      drawPlayersOther(Session.get("playersInArea"), Session.get("playerCurrent"), "below");
+      drawFocus(Session.get("playerCurrent"));  // Draw the current player
+      drawPlayersOther(Session.get("playersInArea"), Session.get("playerCurrent"), "above");
+      drawEnviroment(Session.get("playerCurrent").pos.x, Session.get("playerCurrent").pos.y, "above");
       drawCanvasDisplay(displayScale);
 
       drawTestCanvas(displayScale);
@@ -893,16 +653,16 @@ if (Meteor.isClient) {
   
   function canvasMainDrawLoop () {
     (function animloop(){
-      if (!canvasDataLoaded && canvasDataBelow.getContext && canvasDataAbove.getContext && playerCurrent_id) {
-          canvasDataBelow.width = window[playerCurrentArea.layers.below[0]].width;
-          canvasDataBelow.height = window[playerCurrentArea.layers.below[0]].height;
-        _.each(playerCurrentArea.layers.below, function (layer) {
-          ctxDataBelow.drawImage(window[layer], 0, 0);
+      if (!canvasDataLoaded && canvasDataBelow.getContext && canvasDataAbove.getContext && Session.get("areaCurrent")) {
+          canvasDataBelow.width = window[Session.get("areaCurrent").layers.below[0]].width;
+          canvasDataBelow.height = window[Session.get("areaCurrent").layers.below[0]].height;
+        _.each(Session.get("areaCurrent").layers.below, function (layer) {
+            ctxDataBelow.drawImage(window[layer], 0, 0);
         });
-          canvasDataAbove.width = window[playerCurrentArea.layers.above[0]].width;
-          canvasDataAbove.height = window[playerCurrentArea.layers.above[0]].height;
-        _.each(playerCurrentArea.layers.above, function (layer) {
-          ctxDataAbove.drawImage(window[layer], 0, 0);
+          canvasDataAbove.width = window[Session.get("areaCurrent").layers.above[0]].width;
+          canvasDataAbove.height = window[Session.get("areaCurrent").layers.above[0]].height;
+        _.each(Session.get("areaCurrent").layers.above, function (layer) {
+            ctxDataAbove.drawImage(window[layer], 0, 0);
         });
         canvasDataLoaded = 1;
       }
@@ -973,24 +733,25 @@ if (Meteor.isClient) {
 
   function tryMovement () { 
     window.setInterval(function () {
-      if (playerCurrent_id) {
+      if (Session.get("playerCurrent")._id) {
         moveAmount = 1;
+        //#TODO Handle movement more server side, 
         // Movement
         // Left Arrow, Negative X
         if (Session.equals("keyArrowLeft", "down")) {
-            Meteor.call("incrementPlayerPosition", playerCurrent_id, -moveAmount, 0, "left");
+            Meteor.call("incrementPlayerPosition", Session.get("playerCurrent")._id, -moveAmount, 0, "left");
         }
         // Up Arrow, Negative Y
         if (Session.equals("keyArrowUp", "down")) {
-            Meteor.call("incrementPlayerPosition", playerCurrent_id, 0, -moveAmount, "up");
+            Meteor.call("incrementPlayerPosition", Session.get("playerCurrent")._id, 0, -moveAmount, "up");
         }
         // Right Arrow, Positive X
         if (Session.equals("keyArrowRight", "down")) {
-            Meteor.call("incrementPlayerPosition", playerCurrent_id, moveAmount, 0, "right");
+            Meteor.call("incrementPlayerPosition", Session.get("playerCurrent")._id, moveAmount, 0, "right");
         }
         // Down Arrow, Positive Y
         if (Session.equals("keyArrowDown", "down")) {
-            Meteor.call("incrementPlayerPosition", playerCurrent_id, 0, moveAmount, "down");
+            Meteor.call("incrementPlayerPosition", Session.get("playerCurrent")._id, 0, moveAmount, "down");
         }
         // Actions
         // Space
@@ -1005,7 +766,7 @@ if (Meteor.isClient) {
           //                           [x, y] | Size to display image as
           // [ [x, y], [x, y],[x, y],[x, y] ] | Slices [ [left], [up], [right], [down] ]
           Meteor.call("changePlayerSprite", 
-            playerCurrent_id, 
+            Session.get("playerCurrent")._id, 
             "imageCrystalBeast", 
             [384, 192],
             [384, 192],
@@ -1020,13 +781,13 @@ if (Meteor.isClient) {
     beforeX = 0;
 
     window.setInterval(function () {
-      if (playerCurrent_id) {
+      if (Session.get("playerCurrent")._id) {
         console.log("Time to complete: " + (Date.now() - beforeTime) + 
-          "   x distance changed: " + (playerCurrent.pos.x - beforeX) +
+          "   x distance changed: " + (Session.get("playerCurrent").pos.x - beforeX) +
           "   Average x speed: " + 
-          ((Date.now() - beforeTime)/(playerCurrent.pos.x - beforeX)));
+          ((Date.now() - beforeTime)/(Session.get("playerCurrent").pos.x - beforeX)));
         beforeTime = Date.now();
-        beforeX = playerCurrent.pos.x;
+        beforeX = Session.get("playerCurrent").pos.x;
       }
     }, 1000);
   }
