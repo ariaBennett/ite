@@ -14,6 +14,8 @@ Meteor.methods({
     }});
   },
 
+
+
   getPlayersInArea: function(areaId) {
     return Players.find({area_id: areaId}, {fields: {
       _id: 1,

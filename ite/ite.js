@@ -26,6 +26,15 @@
 // QWE/ASD skills I'm not so sure on.
 //
 //
+// Perhaps an equipment system where
+// each item proves a skill for a specific
+// button, ie:
+// main hand = space
+// offhand = shift
+// asd = armor/gloves/helmet/etc
+// perhaps each armor piece can level and
+// skills can be extracted from pieces?
+//
 //
 // No more thoughts after this point.
 //
@@ -71,10 +80,28 @@ if (Meteor.isClient) {
     Deps.autorun ( function () {
       if (Meteor.user()) {
         // Meteor Function Calls to get Data and Happiness
-        Meteor.call("getPlayerCurrent", Meteor.user()._id, 
+        Meteor.call("getPlayerCurrentId", Meteor.user()._id, 
           function (error, result) {
-            Session.set("playerCurrent", result);
+            Session.set("playerCurrentId", result);
         });
+        // Subscribe to current player.
+        Meteor.subscribe("player", Session.get("playerCurrentId"));
+        Session.set("playerCurrent", Players.findOne(Session.get("playerCurrentId")));
+        if (Session.get("playerCurrent")) {
+          // Subscribe to current area.
+          Meteor.subscribe("area", Session.get("playerCurrent").area_id);
+          Session.set("areaCurrent", Areas.findOne(Session.get("playerCurrent").area_id));
+          // Subscribe to online players in current area. 
+          Meteor.subscribe("playersInArea", Session.get("playerCurrent").area_id);
+          Session.set("playersInArea", Players.find({
+            area_id: Session.get("playerCurrent").area_id
+          }, {
+          sort: {
+            "hitbox.layering.pos.y": 1,
+            "pos.z": 1
+          }}).fetch());
+        }
+        /*
         Meteor.call("getPlayersInArea", Session.get("playerCurrent").area_id, 
           function (error, result) {
             Session.set("playersInArea", result);
@@ -83,9 +110,16 @@ if (Meteor.isClient) {
           function (error, result) {
             Session.set("areaCurrent", result);
         });
+, {
+    sort: {
+      "hitbox.layering.pos.y": 1,
+      "pos.z": 1
+  }}
+      */
       }
       if (!Meteor.user()) {
         Session.set("playerCurrent", "");
+        Session.set("playerCurrentId", "");
         Session.set("playersInArea", "");
         Session.set("areaCurrent", "");
       }
@@ -733,7 +767,7 @@ if (Meteor.isClient) {
 
   function tryMovement () { 
     window.setInterval(function () {
-      if (Session.get("playerCurrent")._id) {
+      if (Session.get("playerCurrent")) {
         moveAmount = 1;
         //#TODO Handle movement more server side, 
         // Movement

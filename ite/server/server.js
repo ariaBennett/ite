@@ -1,5 +1,8 @@
 // Server-only Meteor.methods
 Meteor.methods({
+  getPlayerCurrentId: function(accountId) {
+    return Players.findOne({"account._id": accountId})._id;
+  },
   updateHitboxes: function(id, type) {
     if (type === "players") {
       //#subs
