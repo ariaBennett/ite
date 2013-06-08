@@ -1,5 +1,9 @@
 // Server-only Meteor.methods
 Meteor.methods({
+  debugPrintPlayerDoc: function (accountId) {
+    var playerId = Meteor.call("getPlayerCurrentId", accountId);
+    console.log(Players.findOne(playerId));
+  },
   getPlayerCurrentId: function(accountId) {
     return Players.findOne({"account._id": accountId})._id;
   },
@@ -197,6 +201,24 @@ Meteor.methods({
         x: startingX,
         y: startingY,
         z: 0
+      },
+      keys: {
+        left: {
+          pressed: 0,
+          released: 0
+        },
+        up: {
+          pressed: 0,
+          released: 0
+        },
+        right: {
+          pressed: 0,
+          released: 0
+        },
+        down: {
+          pressed: 0,
+          released: 0
+        }
       },
       hitbox: {
         collision: {

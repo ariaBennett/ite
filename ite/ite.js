@@ -708,122 +708,57 @@ if (Meteor.isClient) {
   }
 
   function attachControls () {
-    // keydown
+    // Left Arrow
+    Session.set("controls.left", 37);
+    // Up Arrow
+    Session.set("controls.up", 38);
+    // Right Arrow
+    Session.set("controls.right", 39);
+    // Down Arrow
+    Session.set("controls.down", 40);
+    // Space
+    Session.set("controls.primary", 32);
+
     window.addEventListener("keydown", function (event) {
       // Movement
-      // Left Arrow
-      if (event.keyCode === 37) {
-        Session.set("keyArrowLeft", "down");
+      if (event.keyCode === Session.get("controls.left")) {
+          Meteor.call("setKeyPressed", "left", Meteor.user()._id);
       }
-      // Up Arrow
-      if (event.keyCode === 38) {
-        Session.set("keyArrowUp", "down");
+      if (event.keyCode === Session.get("controls.up")) {
+          Meteor.call("setKeyPressed", "up", Meteor.user()._id);
       }
-      // Right Arrow
-      if (event.keyCode === 39) {
-        Session.set("keyArrowRight", "down");
+      if (event.keyCode === Session.get("controls.right")) {
+          Meteor.call("setKeyPressed", "right", Meteor.user()._id);
       }
-      // Down Arrow
-      if (event.keyCode === 40) {
-        Session.set("keyArrowDown", "down");
+      if (event.keyCode === Session.get("controls.down")) {
+          Meteor.call("setKeyPressed", "down", Meteor.user()._id);
       }
     
       // Actions
-      // Space
-      if (event.keyCode === 32) {
-        Session.set("keySpace", "down");
+      if (event.keyCode === Session.get("controls.primary")) {
+        Meteor.call("debugPrintPlayerDoc", Meteor.user()._id);
       }
-
     });
 
-    // keyup
     window.addEventListener("keyup", function (event) {
       // Movement
-      // Left Arrow
-      if (event.keyCode === 37) {
-        Session.set("keyArrowLeft", "up");
+      if (event.keyCode === Session.get("controls.left")) {
+          Meteor.call("setKeyReleased", "left", Meteor.user()._id);
       }
-      // Up Arrow
-      if (event.keyCode === 38) {
-        Session.set("keyArrowUp", "up");
+      if (event.keyCode === Session.get("controls.up")) {
+          Meteor.call("setKeyReleased", "up", Meteor.user()._id);
       }
-      // Right Arrow
-      if (event.keyCode === 39) {
-        Session.set("keyArrowRight", "up");
+      if (event.keyCode === Session.get("controls.right")) {
+          Meteor.call("setKeyReleased", "right", Meteor.user()._id);
       }
-      // Down Arrow
-      if (event.keyCode === 40) {
-        Session.set("keyArrowDown", "up");
+      if (event.keyCode === Session.get("controls.down")) {
+          Meteor.call("setKeyReleased", "down", Meteor.user()._id);
       }
     
       // Actions
-      // Space
-      if (event.keyCode === 32) {
-        Session.set("keySpace", "up");
+      if (event.keyCode === Session.get("controls.primary")) {
       }
-
     });
-  }
-
-  function tryMovement () { 
-    window.setInterval(function () {
-      if (Session.get("playerCurrent")) {
-        moveAmount = 1;
-        //#TODO Handle movement more server side, 
-        // Movement
-        // Left Arrow, Negative X
-        if (Session.equals("keyArrowLeft", "down")) {
-            Meteor.call("incrementPlayerPosition", Session.get("playerCurrent")._id, -moveAmount, 0, "left");
-        }
-        // Up Arrow, Negative Y
-        if (Session.equals("keyArrowUp", "down")) {
-            Meteor.call("incrementPlayerPosition", Session.get("playerCurrent")._id, 0, -moveAmount, "up");
-        }
-        // Right Arrow, Positive X
-        if (Session.equals("keyArrowRight", "down")) {
-            Meteor.call("incrementPlayerPosition", Session.get("playerCurrent")._id, moveAmount, 0, "right");
-        }
-        // Down Arrow, Positive Y
-        if (Session.equals("keyArrowDown", "down")) {
-            Meteor.call("incrementPlayerPosition", Session.get("playerCurrent")._id, 0, moveAmount, "down");
-        }
-        // Actions
-        // Space
-        if (Session.get("keySpace") === "down") {
-          // Convert current player to a different model
-
-          //                               Parameter Explaination:
-          //                           String | Name of Server Method
-          //                           String | ID of player to alter
-          //                           String | Name of source image object
-          //                           [x, y] | Size of source image
-          //                           [x, y] | Size to display image as
-          // [ [x, y], [x, y],[x, y],[x, y] ] | Slices [ [left], [up], [right], [down] ]
-          Meteor.call("changePlayerSprite", 
-            Session.get("playerCurrent")._id, 
-            "imageCrystalBeast", 
-            [384, 192],
-            [384, 192],
-            [ [0,0],[0,0],[0,0],[0,0] ]);
-        }
-      }
-    }, 12);
-  }
-
-  function debugReport() {
-    beforeTime = 0;
-    beforeX = 0;
-
-    window.setInterval(function () {
-      if (Session.get("playerCurrent")._id) {
-        console.log("Time to complete: " + (Date.now() - beforeTime) + 
-          "   x distance changed: " + (Session.get("playerCurrent").pos.x - beforeX) +
-          "   Average x speed: " + 
-          ((Date.now() - beforeTime)/(Session.get("playerCurrent").pos.x - beforeX)));
-        beforeTime = Date.now();
-        beforeX = Session.get("playerCurrent").pos.x;
-      }
-    }, 1000);
   }
 
   // Startup Sequence
@@ -831,6 +766,4 @@ if (Meteor.isClient) {
   Meteor.startup(animationFrameSetup);
   Meteor.startup(canvasMainDrawLoop);
   Meteor.startup(attachControls);
-  Meteor.startup(tryMovement);
-  // Meteor.startup(debugReport);
 }
