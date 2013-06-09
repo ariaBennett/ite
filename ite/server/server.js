@@ -1,15 +1,22 @@
 // Server-only Meteor.methods
 Meteor.methods({
   debugPrintPlayerDoc: function (accountId) {
-    var playerId = Meteor.call("getPlayerCurrentId", accountId);
+    var playerId = Meteor.call("getPlayerCurrentId", this.userId);
+    //Meteor.call("incrementPlayerPosition", playerId, 0, 1, "down");
+    Players.update(playerId, {$inc: {"pos.y": 1}});
     console.log(Players.findOne(playerId));
+    console.log(Queues.findOne());
   },
   getPlayerCurrentId: function(accountId) {
-    return Players.findOne({"account._id": accountId})._id;
+    return Players.findOne({"account._id": this.userId})._id;
+  },
+  getPlayerCurrentAreaId: function(accountId) {
+    return Players.findOne({"account._id": this.userId}).area_id;
   },
   updateHitboxes: function(id, type) {
     if (type === "players") {
       //#subs
+      //TODO Fix playerid dependency
       player = Players.findOne({_id: id});
       Players.update(id, {$set: {
         hitbox: {
@@ -64,8 +71,7 @@ Meteor.methods({
     // Screen Edges
 
     //#TODO isCollision is empty
-    if (startX + incX < 0 || endX + incX > area.width || 
-      Meteor.call("isCollisionX", player) === true) {
+    if (startX + incX < 0 || endX + incX > area.width) {
       incX = 0;
     }
     else {
@@ -421,11 +427,19 @@ Meteor.methods({
       }
     }
   },
+  generateQueue: function (area_id) {
+      Queues.insert({
+        area_id: area_id,
+        queue: new goog.structs.PriorityQueue()
+      });
+  },
   initZone: function (zoneName, areaDocs) {
     var zone_id = Meteor.call("addZone", zoneName);
     _.each(areaDocs, function(area){
       var area_id = Meteor.call("addArea", zone_id, zoneName, area.name, area.width,
                                 area.height, area.layersBelow, area.layersAbove, area.sectionSize);
+      Meteor.call("generateQueue", area_id);
+      // Insert a new queue for each area.
       Meteor.call("generateSections", area_id, area.name, area.width, area.height, area.sectionSize, 
                   area.collisionData);
     });

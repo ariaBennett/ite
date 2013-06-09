@@ -63,6 +63,7 @@ Players = new Meteor.Collection("players");
 Zones = new Meteor.Collection("zones");
 Areas = new Meteor.Collection("areas");
 Sections = new Meteor.Collection("sections");
+Queues = new Meteor.Collection("queues");
 
 // Client
 if (Meteor.isClient) {
@@ -79,8 +80,9 @@ if (Meteor.isClient) {
     Session.set("isDebug", "0");
     Deps.autorun ( function () {
       if (Meteor.user()) {
+        //TODO Remove the user()._id from this call
         // Meteor Function Calls to get Data and Happiness
-        Meteor.call("getPlayerCurrentId", Meteor.user()._id, 
+        Meteor.call("getPlayerCurrentId", 
           function (error, result) {
             Session.set("playerCurrentId", result);
         });
@@ -722,37 +724,37 @@ if (Meteor.isClient) {
     window.addEventListener("keydown", function (event) {
       // Movement
       if (event.keyCode === Session.get("controls.left")) {
-          Meteor.call("setKeyPressed", "left", Meteor.user()._id);
+          Meteor.call("setKeyPressed", "left");
       }
       if (event.keyCode === Session.get("controls.up")) {
-          Meteor.call("setKeyPressed", "up", Meteor.user()._id);
+          Meteor.call("setKeyPressed", "up");
       }
       if (event.keyCode === Session.get("controls.right")) {
-          Meteor.call("setKeyPressed", "right", Meteor.user()._id);
+          Meteor.call("setKeyPressed", "right");
       }
       if (event.keyCode === Session.get("controls.down")) {
-          Meteor.call("setKeyPressed", "down", Meteor.user()._id);
+          Meteor.call("setKeyPressed", "down");
       }
     
       // Actions
       if (event.keyCode === Session.get("controls.primary")) {
-        Meteor.call("debugPrintPlayerDoc", Meteor.user()._id);
+        Meteor.call("debugPrintPlayerDoc");
       }
     });
 
     window.addEventListener("keyup", function (event) {
       // Movement
       if (event.keyCode === Session.get("controls.left")) {
-          Meteor.call("setKeyReleased", "left", Meteor.user()._id);
+          Meteor.call("setKeyReleased", "left");
       }
       if (event.keyCode === Session.get("controls.up")) {
-          Meteor.call("setKeyReleased", "up", Meteor.user()._id);
+          Meteor.call("setKeyReleased", "up");
       }
       if (event.keyCode === Session.get("controls.right")) {
-          Meteor.call("setKeyReleased", "right", Meteor.user()._id);
+          Meteor.call("setKeyReleased", "right");
       }
       if (event.keyCode === Session.get("controls.down")) {
-          Meteor.call("setKeyReleased", "down", Meteor.user()._id);
+          Meteor.call("setKeyReleased", "down");
       }
     
       // Actions
