@@ -1,7 +1,0 @@
-python closure-library/closure/bin/build/closurebuilder.py \
-  --root=closure-library/ \
-  --root=server/ \
-  --namespace="server.start" \
-  --output_mode=compiled \
-  --compiler_jar=compiler.jar \
-  > server/priorityqueue-compiled.js
