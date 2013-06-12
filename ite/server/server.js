@@ -430,7 +430,7 @@ Meteor.methods({
   generateQueue: function (area_id) {
       Queues.insert({
         area_id: area_id,
-        queue: new goog.structs.PriorityQueue()
+        queue: new PriorityQueue()
       });
   },
   initZone: function (zoneName, areaDocs) {
