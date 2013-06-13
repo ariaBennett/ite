@@ -56,7 +56,7 @@ Meteor.methods({
   },
 
   incrementPlayerPosition: function(id, incX, incY, facing) {
-    //#TODO make these non-global
+    //TODO Fix this
     ////#subs
     var player = Players.findOne({_id: id});
     //#subs
@@ -71,6 +71,8 @@ Meteor.methods({
     // Screen Edges
 
     //#TODO isCollision is empty
+    //TODO Detect collision in the future on client, 
+    //
     if (startX + incX < 0 || endX + incX > area.width) {
       incX = 0;
     }

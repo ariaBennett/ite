@@ -89,6 +89,9 @@ if (Meteor.isClient) {
         // Subscribe to current player.
         Meteor.subscribe("player", Session.get("playerCurrentId"));
         Session.set("playerCurrent", Players.findOne(Session.get("playerCurrentId")));
+        //TODO switch to a findOne
+        // call findOne at least once per autorun
+        // give each sub its on autorun
         if (Session.get("playerCurrent")) {
           // Subscribe to current area.
           Meteor.subscribe("area", Session.get("playerCurrent").area_id);
