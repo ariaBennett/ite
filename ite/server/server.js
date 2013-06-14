@@ -5,7 +5,7 @@ Meteor.methods({
     //Meteor.call("incrementPlayerPosition", playerId, 0, 1, "down");
     Players.update(playerId, {$inc: {"pos.y": 1}});
     console.log(Players.findOne(playerId));
-    console.log(Queues.findOne());
+    console.log(Timelines.findOne());
   },
   getPlayerCurrentId: function(accountId) {
     return Players.findOne({"account._id": this.userId})._id;
@@ -429,19 +429,19 @@ Meteor.methods({
       }
     }
   },
-  generateQueue: function (area_id) {
-      Queues.insert({
-        area_id: area_id,
-        queue: new PriorityQueue()
-      });
+  generateTimeline: function (area_id) {
+    Timelines.insert({
+      area_id: area_id,
+      timeline: new PriorityQueue()
+    });
   },
   initZone: function (zoneName, areaDocs) {
     var zone_id = Meteor.call("addZone", zoneName);
     _.each(areaDocs, function(area){
       var area_id = Meteor.call("addArea", zone_id, zoneName, area.name, area.width,
                                 area.height, area.layersBelow, area.layersAbove, area.sectionSize);
-      Meteor.call("generateQueue", area_id);
-      // Insert a new queue for each area.
+      Meteor.call("generateTimeline", area_id);
+      // Insert a new timeline for each area.
       Meteor.call("generateSections", area_id, area.name, area.width, area.height, area.sectionSize, 
                   area.collisionData);
     });

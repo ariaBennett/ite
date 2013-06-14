@@ -63,7 +63,7 @@ Players = new Meteor.Collection("players");
 Zones = new Meteor.Collection("zones");
 Areas = new Meteor.Collection("areas");
 Sections = new Meteor.Collection("sections");
-Queues = new Meteor.Collection("queues");
+Timelines = new Meteor.Collection("timelines");
 
 // Client
 if (Meteor.isClient) {
