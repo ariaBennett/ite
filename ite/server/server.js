@@ -1,11 +1,14 @@
 // Server-only Meteor.methods
 Meteor.methods({
+  getClientTimeOffset: function (clientTime) {
+    return (server.time - (server.time - clientTime));
+  },
   debugPrintPlayerDoc: function (accountId) {
     var playerId = Meteor.call("getPlayerCurrentId", this.userId);
     //Meteor.call("incrementPlayerPosition", playerId, 0, 1, "down");
     Players.update(playerId, {$inc: {"pos.y": 1}});
     console.log(Players.findOne(playerId));
-    console.log(Timelines.findOne());
+    //console.log(Timelines.findOne());
   },
   getPlayerCurrentId: function(accountId) {
     return Players.findOne({"account._id": this.userId})._id;
@@ -387,6 +390,7 @@ Meteor.methods({
     return Zones.insert({name: name});
   },
   addArea: function (zone_id, zone_name, name, width, height, layersBelow, layersAbove, sectionSize) {
+    var timelineId = Meteor.call("generateTimeline");
     return Areas.insert({
       zone_id: zone_id,
       // #TODO: decide on a variable naming convention and
@@ -401,7 +405,8 @@ Meteor.methods({
       layers: {
         below: layersBelow,
         above: layersAbove
-      }
+      },
+        timelineId: timelineId
     });
   },
   addSection: function (area_id, areaName, column, row, startX, startY, sectionSize, sectionCollisionData) {
@@ -429,18 +434,16 @@ Meteor.methods({
       }
     }
   },
-  generateTimeline: function (area_id) {
-    Timelines.insert({
-      area_id: area_id,
+  generateTimeline: function () {
+    return Timelines.insert({
       timeline: new PriorityQueue()
     });
   },
   initZone: function (zoneName, areaDocs) {
     var zone_id = Meteor.call("addZone", zoneName);
     _.each(areaDocs, function(area){
-      var area_id = Meteor.call("addArea", zone_id, zoneName, area.name, area.width,
-                                area.height, area.layersBelow, area.layersAbove, area.sectionSize);
-      Meteor.call("generateTimeline", area_id);
+    var area_id = Meteor.call("addArea", zone_id, zoneName, area.name, area.width,
+      area.height, area.layersBelow, area.layersAbove, area.sectionSize);
       // Insert a new timeline for each area.
       Meteor.call("generateSections", area_id, area.name, area.width, area.height, area.sectionSize, 
                   area.collisionData);
@@ -462,7 +465,19 @@ Accounts.onCreateUser(function(options, user) {
   return user;
 });
 
+
 Meteor.startup(function () {
+  // init server
+  function Server(name) {
+    this.name = serverName;
+    this.time = new Date();
+  }
+  var serverName = "alpha";
+  server = new Server(serverName);
+  Meteor.setInterval(function (){
+    server.time = new Date();
+  }, 1);
+
   // Init Zones
   if (!Zones.findOne({"name": "ct_cathedral"})) {
     var areaDocs = [
@@ -479,7 +494,7 @@ Meteor.startup(function () {
           "ct_cathedral_3_1",
           "ct_cathedral_3_2"
         ],
-        collisionData: ct_cathedral_3_collision
+        collisionData: ct_cathedral_3_collision,
       }
     ];
     //console.log(ct_cathedral_3_collision[18][19]);

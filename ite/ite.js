@@ -60,10 +60,28 @@
 
 // Shared Databases
 Players = new Meteor.Collection("players");
+// Zones can be thought of as "locations"
+// A zone can have any many areas as it 
+// desires.
 Zones = new Meteor.Collection("zones");
+// An area may only belong to one Zone.  
+// There are many sister areas that areas
+// typically intertwine with, however,
+// on a gameplay standpoint each area is
+// seperate from the events of neighboring
+// areas, UNLESS those events come from a 
+// more global source.
 Areas = new Meteor.Collection("areas");
+// Sections are actually the subunites of each
+// area where nitty gritty infor is stored, just
+// as the pixel based collision data.  
 Sections = new Meteor.Collection("sections");
+// Timelines contain data ordered by time,
+// oldest time has top priority.
 Timelines = new Meteor.Collection("timelines");
+// Events are a pair, the timestamp key ties
+// to a document which details the event
+Events = new Meteor.Collection("events");
 
 // Client
 if (Meteor.isClient) {
@@ -106,21 +124,6 @@ if (Meteor.isClient) {
             "pos.z": 1
           }}).fetch());
         }
-        /*
-        Meteor.call("getPlayersInArea", Session.get("playerCurrent").area_id, 
-          function (error, result) {
-            Session.set("playersInArea", result);
-        });
-        Meteor.call("getArea", Session.get("playerCurrent").area_id, 
-          function (error, result) {
-            Session.set("areaCurrent", result);
-        });
-, {
-    sort: {
-      "hitbox.layering.pos.y": 1,
-      "pos.z": 1
-  }}
-      */
       }
       if (!Meteor.user()) {
         Session.set("playerCurrent", "");
@@ -727,6 +730,7 @@ if (Meteor.isClient) {
     window.addEventListener("keydown", function (event) {
       // Movement
       if (event.keyCode === Session.get("controls.left")) {
+        Meteor.call("getClientTimeOffset", new Date());
           Meteor.call("setKeyPressed", "left");
       }
       if (event.keyCode === Session.get("controls.up")) {

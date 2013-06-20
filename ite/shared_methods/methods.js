@@ -1,6 +1,6 @@
 // Shared Methods
 Meteor.methods({
-  enqueueAction: function(action) {
+  enqueueEvent: function(e) {
     var player = Meteor.call("getPlayerCurrentAreaId", this.userId)
     var queueId = Queues.findOne({area_id: player.area_id})._id;
 
