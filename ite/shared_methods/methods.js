@@ -1,48 +1,46 @@
 // Shared Methods
 Meteor.methods({
-  enqueueEvent: function(e) {
-    var player = Meteor.call("getPlayerCurrentAreaId", this.userId)
-    var queueId = Queues.findOne({area_id: player.area_id})._id;
+  enqueueEvent: function(time, e) {
+    var areaId = Players.findOne(Meteor.user().playerCurrentId).area_id;
+    var timelineId = Areas.findOne(areaId).timelineId;
+    var timeline = Timelines.findOne(timelineId);
+    //TODO Have the server push with lag correction
+    console.log();
+   // timeline.timeline.push(e, time);
+   // Timelines.update(timelineId, {$set: {timeline: timeline.timeline} });
+   // console.log(Timelines.find().fetch());
 
   },
+
   setKeyPressed: function(key) {
     if (Meteor.isServer) {
-      var playerId = Meteor.call("getPlayerCurrentId", this.userId)
+      var playerId = Meteor.user().playerCurrentId;
       switch (key) {
         case "left":
-          if (!Players.findOne(playerId).keys.left.pressed) {
-            Players.update(playerId, {$set: {
-              "keys.left.pressed": new Date()
-            }});
-          }
+          Meteor.call("enqueueEvent", new Date(), {move: "left"});
           break;
         case "up":
-          if (!Players.findOne(playerId).keys.up.pressed) {
             Players.update(playerId, {$set: {
               "keys.up.pressed": new Date()
             }});
-          }
           break;
         case "right":
-          if (!Players.findOne(playerId).keys.right.pressed) {
             Players.update(playerId, {$set: {
               "keys.right.pressed": new Date()
             }});
-          }
           break;
         case "down":
-          if (!Players.findOne(playerId).keys.down.pressed) {
             Players.update(playerId, {$set: {
               "keys.down.pressed": new Date()
             }});
-          }
           break;
       }
     }
   },
+
   setKeyReleased: function(key) {
     if (Meteor.isServer) {
-      var playerId = Meteor.call("getPlayerCurrentId", this.userId)
+      var playerId = Meteor.user().playerCurrentId;
       switch (key) {
         case "left":
           Players.update(playerId, {$set: {

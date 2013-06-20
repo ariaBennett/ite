@@ -14,7 +14,15 @@ Meteor.publish("area", function(areaId) {
     width: 1,
     height: 1,
     size: 1,
-    layers: 1
+    layers: 1,
+    timelineId: 1
+  }});
+});
+
+Meteor.publish("timeline", function(timelineId) {
+  return Timelines.find(timelineId, {fields: {
+    _id: 1, 
+    timeline: 1
   }});
 });
 

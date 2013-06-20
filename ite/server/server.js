@@ -347,6 +347,7 @@ Meteor.methods({
       entryEnd: "entryEnd"
     });                              
     Meteor.call("updateSections", Players.findOne(p_id), "players");
+    return p_id;
   },
 
 
@@ -406,7 +407,7 @@ Meteor.methods({
         below: layersBelow,
         above: layersAbove
       },
-        timelineId: timelineId
+      timelineId: timelineId
     });
   },
   addSection: function (area_id, areaName, column, row, startX, startY, sectionSize, sectionCollisionData) {
@@ -444,9 +445,9 @@ Meteor.methods({
     _.each(areaDocs, function(area){
     var area_id = Meteor.call("addArea", zone_id, zoneName, area.name, area.width,
       area.height, area.layersBelow, area.layersAbove, area.sectionSize);
-      // Insert a new timeline for each area.
       Meteor.call("generateSections", area_id, area.name, area.width, area.height, area.sectionSize, 
                   area.collisionData);
+      console.log(Areas.findOne());
     });
     return zone_id;
   }
@@ -460,7 +461,8 @@ Accounts.onCreateUser(function(options, user) {
     startingZoneId = Zones.findOne({name: "ct_cathedral"})._id;
     startingAreaId = Areas.findOne({zone_id: startingZoneId})._id;
     startingSectionId = Sections.findOne({area_id: startingAreaId, column: 0, row: 0})._id;
-    Meteor.call("createPlayer", user._id, user.username, startingZoneId, startingAreaId, startingSectionId);
+    var playerId = Meteor.call("createPlayer", user._id, user.username, startingZoneId, startingAreaId, startingSectionId);
+    user.playerCurrentId = playerId;
   }
   return user;
 });

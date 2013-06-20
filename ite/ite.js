@@ -112,8 +112,14 @@ if (Meteor.isClient) {
         // give each sub its on autorun
         if (Session.get("playerCurrent")) {
           // Subscribe to current area.
+
           Meteor.subscribe("area", Session.get("playerCurrent").area_id);
           Session.set("areaCurrent", Areas.findOne(Session.get("playerCurrent").area_id));
+
+          if (Session.get("areaCurrent")) {
+            Meteor.subscribe("timeline", Session.get("areaCurrent").timelineId);
+            Session.set("timelineCurrent", Timelines.findOne(Session.get("areaCurrent").timelineId));
+          }
           // Subscribe to online players in current area. 
           Meteor.subscribe("playersInArea", Session.get("playerCurrent").area_id);
           Session.set("playersInArea", Players.find({
@@ -730,7 +736,6 @@ if (Meteor.isClient) {
     window.addEventListener("keydown", function (event) {
       // Movement
       if (event.keyCode === Session.get("controls.left")) {
-        Meteor.call("getClientTimeOffset", new Date());
           Meteor.call("setKeyPressed", "left");
       }
       if (event.keyCode === Session.get("controls.up")) {
