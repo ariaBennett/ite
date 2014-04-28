@@ -892,7 +892,7 @@ if (Meteor.isClient) {
   function tryMovement () { 
     window.setInterval(function () {
       if (playerCurrent_id) {
-        moveAmount = 4;
+        moveAmount = 1;
         // Movement
         // Left Arrow, Negative X
         if (Session.equals("keyArrowLeft", "down")) {
